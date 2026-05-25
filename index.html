@@ -1,0 +1,2069 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>경찰대 어원 학습기</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #070b16;
+      color: #fff;
+      min-height: 100vh;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 24px 16px 16px;
+    }
+
+    /* ── Header ─────────────────────────────────────── */
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      max-width: 860px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      margin-bottom: 36px;
+    }
+
+    .header-badge {
+      background: rgba(37,99,235,0.14);
+      border: 1px solid rgba(37,99,235,0.4);
+      color: #60a5fa;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      padding: 5px 12px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .app-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.45);
+      flex: 1;
+    }
+
+    .word-counter {
+      font-size: 13px;
+      color: rgba(255,255,255,0.25);
+      font-family: 'Courier New', monospace;
+    }
+
+    /* ── Main layout ────────────────────────────────── */
+    .app-main {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      max-width: 860px;
+      flex: 1;
+    }
+
+    .nav-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      color: rgba(255,255,255,0.55);
+      font-size: 17px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.2s, color 0.2s, transform 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      transform: scale(1.08);
+    }
+
+    .card-container { flex: 1; }
+
+    /* ── Word display ───────────────────────────────── */
+    .word-display {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .main-word { text-align: center; padding: 4px 0 8px; }
+
+    .word-text {
+      font-size: clamp(38px, 8vw, 62px);
+      font-weight: 800;
+      letter-spacing: -2px;
+      background: linear-gradient(135deg, #fff 0%, #93c5fd 55%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+
+    .word-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .pronunciation {
+      color: rgba(255,255,255,0.3);
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+
+    .divider-dot {
+      width: 3px; height: 3px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+    }
+
+    .korean { color: #93c5fd; font-size: 16px; font-weight: 600; }
+
+    /* ── Etymology section ──────────────────────────── */
+    .etymology-section {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      padding: 22px 16px 20px;
+    }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.22);
+      margin-bottom: 20px;
+    }
+
+    .etymology-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 2px;
+      flex-wrap: wrap;
+    }
+
+    .etym-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 110px;
+    }
+
+    .etym-meaning { text-align: center; }
+
+    .meaning-text {
+      font-size: 12px;
+      color: rgba(255,255,255,0.52);
+      line-height: 1.5;
+    }
+
+    .connector {
+      font-size: 20px;
+      color: rgba(255,255,255,0.14);
+      font-weight: 200;
+      padding-top: 34px;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Mnemonic ───────────────────────────────────── */
+    .mnemonic-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: rgba(251,191,36,0.06);
+      border: 1px solid rgba(251,191,36,0.18);
+      border-radius: 14px;
+      padding: 15px 18px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.72);
+    }
+
+    .mnemonic-icon { font-size: 18px; line-height: 1; flex-shrink: 0; margin-top: 2px; }
+
+    /* ── Situation ──────────────────────────────────── */
+    .situation-box {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-left: 3px solid #3b82f6;
+      border-radius: 2px 14px 14px 2px;
+      padding: 18px 20px;
+    }
+
+    .situation-en {
+      font-size: 15px;
+      color: rgba(255,255,255,0.72);
+      font-style: italic;
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+
+    .situation-ko {
+      font-size: 13px;
+      color: rgba(255,255,255,0.38);
+      line-height: 1.5;
+    }
+
+    /* ── Progress dots ──────────────────────────────── */
+    .progress-dots {
+      display: flex;
+      gap: 8px;
+      margin-top: 28px;
+    }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.14);
+      cursor: pointer;
+      transition: background 0.25s, transform 0.25s;
+      padding: 0;
+    }
+
+    .dot.active { background: #3b82f6; transform: scale(1.4); }
+    .dot:hover:not(.active) { background: rgba(255,255,255,0.35); }
+
+    .keyboard-hint {
+      font-size: 11px;
+      color: rgba(255,255,255,0.18);
+      margin-top: 12px;
+      padding-bottom: 20px;
+      letter-spacing: 0.3px;
+    }
+
+    kbd {
+      display: inline-block;
+      padding: 1px 5px;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  어휘 JSON 데이터
+    // ─────────────────────────────────────────────────────────────────────────
+    const VOCAB_DATA = [
+      {
+        id: 1,
+        word: "ambiguous",
+        pronunciation: "/æmˈbɪɡjuəs/",
+        korean: "애매한, 모호한",
+        etymology: [
+          { part: "ambi-",       meaning: "양쪽, 둘 다",      origin: "Latin",  color: "#4ECDC4" },
+          { part: "ig (agere)",  meaning: "이끌다, 몰다",     origin: "Latin",  color: "#45B7D1" },
+          { part: "-uous",       meaning: "형용사 접미사",    origin: "Latin",  color: "#96CEB4" }
+        ],
+        mnemonic: "양쪽으로(ambi) 이끌려 갈 수 있어서(agere) → 어느 쪽인지 모를 만큼 모호한",
+        situation: {
+          en: "The suspect gave an ambiguous answer to every question.",
+          ko: "용의자는 모든 질문에 모호한 답변을 내놓았다."
+        }
+      },
+      {
+        id: 2,
+        word: "scrutinize",
+        pronunciation: "/ˈskruːtənaɪz/",
+        korean: "면밀히 조사하다",
+        etymology: [
+          { part: "scruta",  meaning: "잡동사니, 폐기물",  origin: "Latin",  color: "#FF6B6B" },
+          { part: "-in-",    meaning: "연결 접사",          origin: "Latin",  color: "#FFA07A" },
+          { part: "-ize",    meaning: "동사화 접미사",      origin: "Greek",  color: "#FFD93D" }
+        ],
+        mnemonic: "쓰레기(scruta)더미까지 뒤지며 살피다 → 면밀히 조사하다",
+        situation: {
+          en: "The forensic team scrutinized every inch of the crime scene.",
+          ko: "과학수사팀은 범죄 현장을 구석구석 면밀히 조사했다."
+        }
+      },
+      {
+        id: 3,
+        word: "jurisdiction",
+        pronunciation: "/ˌdʒʊərɪsˈdɪkʃən/",
+        korean: "관할권, 사법권",
+        etymology: [
+          { part: "juris",  meaning: "법, 법률의",        origin: "Latin",  color: "#A8E6CF" },
+          { part: "dict",   meaning: "말하다, 선언하다",  origin: "Latin",  color: "#7FDBDA" },
+          { part: "-ion",   meaning: "명사 접미사",        origin: "Latin",  color: "#B5EAD7" }
+        ],
+        mnemonic: "법(juris)을 말하는(dict) 권한(-ion) → 관할권, 사법권",
+        situation: {
+          en: "The federal case fell outside the local police's jurisdiction.",
+          ko: "연방 사건은 지방 경찰의 관할권 밖이었다."
+        }
+      },
+      {
+        id: 4,
+        word: "perpetrator",
+        pronunciation: "/ˈpɜːrpətreɪtər/",
+        korean: "범인, 가해자",
+        etymology: [
+          { part: "per-",    meaning: "완전히, 끝까지",      origin: "Latin",  color: "#C77DFF" },
+          { part: "petr-",   meaning: "실행하다 (patrare)",  origin: "Latin",  color: "#9D4EDD" },
+          { part: "-ator",   meaning: "행위자 명사",          origin: "Latin",  color: "#E0AAFF" }
+        ],
+        mnemonic: "끝까지(per) 범행을 실행한(patrare) 사람(-ator) → 범인",
+        situation: {
+          en: "Police identified the perpetrator through CCTV footage.",
+          ko: "경찰은 CCTV 영상을 통해 범인을 특정했다."
+        }
+      },
+      {
+        id: 5,
+        word: "interrogate",
+        pronunciation: "/ɪnˈterəɡeɪt/",
+        korean: "심문하다, 취조하다",
+        etymology: [
+          { part: "inter-",  meaning: "사이에, 서로",      origin: "Latin",  color: "#FF9F43" },
+          { part: "rog-",    meaning: "묻다 (rogare)",     origin: "Latin",  color: "#EE5A24" },
+          { part: "-ate",    meaning: "동사화 접미사",      origin: "Latin",  color: "#FECA57" }
+        ],
+        mnemonic: "서로(inter) 주고받으며 묻는(rogare) 것 → 심문하다",
+        situation: {
+          en: "Detectives interrogated the witness for three hours.",
+          ko: "형사들은 목격자를 세 시간 동안 심문했다."
+        }
+      },
+      {
+        id: 6,
+        word: "clandestine",
+        pronunciation: "/klænˈdestɪn/",
+        korean: "비밀의, 은밀한",
+        etymology: [
+          { part: "clam",    meaning: "몰래, 숨어서",     origin: "Latin",  color: "#74B9FF" },
+          { part: "-dest-",  meaning: "연결 변형",         origin: "Latin",  color: "#0984E3" },
+          { part: "-ine",    meaning: "형용사 접미사",     origin: "Latin",  color: "#A29BFE" }
+        ],
+        mnemonic: "몰래(clam) 숨어서 하는 → 비밀의, 은밀한",
+        situation: {
+          en: "The informant arranged a clandestine meeting with the detective.",
+          ko: "정보원은 형사와 은밀한 만남을 주선했다."
+        }
+      },
+      {
+        id: 7,
+        word: "exonerate",
+        pronunciation: "/ɪɡˈzɒnəreɪt/",
+        korean: "무죄를 선언하다, 혐의를 벗기다",
+        etymology: [
+          { part: "ex-",    meaning: "밖으로, 제거",      origin: "Latin",  color: "#00B894" },
+          { part: "onus",   meaning: "짐, 부담, 죄",      origin: "Latin",  color: "#00CEC9" },
+          { part: "-ate",   meaning: "동사화 접미사",      origin: "Latin",  color: "#55EFC4" }
+        ],
+        mnemonic: "죄의 짐(onus)을 밖으로(ex) 꺼내 주다 → 무죄를 선언하다",
+        situation: {
+          en: "New DNA evidence exonerated the wrongly convicted man.",
+          ko: "새로운 DNA 증거가 억울하게 유죄 판결 받은 남자의 누명을 벗겼다."
+        }
+      },
+      {
+        id: 8, word: "arbitrary", pronunciation: "/ˈɑːrbɪtreri/", korean: "임의의, 독단적인",
+        etymology: [
+          { part: "arbiter", meaning: "심판, 중재자", origin: "Latin", color: "#FF6B6B" },
+          { part: "-ary",    meaning: "형용사 접미사", origin: "Latin", color: "#FFA07A" }
+        ],
+        mnemonic: "심판(arbiter)이 마음대로 결정하듯 → 임의적인",
+        situation: { en: "The judge's arbitrary ruling shocked the courtroom.", ko: "판사의 독단적인 판결이 법정을 놀라게 했다." }
+      },
+      {
+        id: 9, word: "contraband", pronunciation: "/ˈkɒntrəbænd/", korean: "밀수품, 금제품",
+        etymology: [
+          { part: "contra-", meaning: "반대로, 위반하여", origin: "Latin",   color: "#C77DFF" },
+          { part: "band",    meaning: "법령, 포고",       origin: "Italian", color: "#9D4EDD" }
+        ],
+        mnemonic: "법령(band)을 위반하여(contra) 들여온 것 → 밀수품",
+        situation: { en: "Customs officers seized large amounts of contraband at the port.", ko: "세관원들이 항구에서 대량의 밀수품을 압수했다." }
+      },
+      {
+        id: 10, word: "detain", pronunciation: "/dɪˈteɪn/", korean: "억류하다, 구금하다",
+        etymology: [
+          { part: "de-",   meaning: "아래로, 강조",  origin: "Latin", color: "#74B9FF" },
+          { part: "tain",  meaning: "붙들다 (tenere)", origin: "Latin", color: "#0984E3" }
+        ],
+        mnemonic: "꽉 붙들어(tenere) 두다 → 억류하다",
+        situation: { en: "Police were authorized to detain the suspect for 48 hours.", ko: "경찰은 48시간 동안 용의자를 구금할 권한을 부여받았다." }
+      },
+      {
+        id: 11, word: "alibi", pronunciation: "/ˈæləbaɪ/", korean: "알리바이, 현장부재증명",
+        etymology: [
+          { part: "ali-", meaning: "다른 곳에 (alius)", origin: "Latin", color: "#00B894" },
+          { part: "ibi",  meaning: "거기에, 그 장소에",  origin: "Latin", color: "#55EFC4" }
+        ],
+        mnemonic: "범행 당시 다른 곳(alius)에 있었다(ibi)는 증명 → 알리바이",
+        situation: { en: "The suspect's alibi was confirmed by three witnesses.", ko: "용의자의 알리바이는 세 명의 목격자에 의해 확인됐다." }
+      },
+      {
+        id: 12, word: "homicide", pronunciation: "/ˈhɒmɪsaɪd/", korean: "살인, 살인죄",
+        etymology: [
+          { part: "homo",  meaning: "사람 (인간)",    origin: "Latin", color: "#FF9F43" },
+          { part: "-cide", meaning: "죽이는 행위",    origin: "Latin", color: "#EE5A24" }
+        ],
+        mnemonic: "사람(homo)을 죽이는(-cide) 행위 → 살인",
+        situation: { en: "The homicide detective arrived at the scene within minutes.", ko: "살인 담당 형사가 몇 분 안에 현장에 도착했다." }
+      },
+      {
+        id: 13, word: "incriminate", pronunciation: "/ɪnˈkrɪmɪneɪt/", korean: "죄를 씌우다, 연루시키다",
+        etymology: [
+          { part: "in-",    meaning: "안으로, ~하게",   origin: "Latin", color: "#A8E6CF" },
+          { part: "crimen", meaning: "범죄, 혐의",       origin: "Latin", color: "#7FDBDA" },
+          { part: "-ate",   meaning: "동사화 접미사",    origin: "Latin", color: "#B5EAD7" }
+        ],
+        mnemonic: "범죄(crimen) 안으로(in) 밀어 넣다 → 죄를 씌우다",
+        situation: { en: "The phone records incriminated him beyond doubt.", ko: "통화 기록이 그에게 죄를 씌우기에 충분했다." }
+      },
+      {
+        id: 14, word: "lenient", pronunciation: "/ˈliːniənt/", korean: "관대한, 너그러운",
+        etymology: [
+          { part: "lenis",  meaning: "부드러운, 온화한", origin: "Latin", color: "#FFEAA7" },
+          { part: "-ent",   meaning: "형용사 접미사",    origin: "Latin", color: "#FDCB6E" }
+        ],
+        mnemonic: "부드럽고(lenis) 온화한 → 관대한",
+        situation: { en: "Critics argued the sentence was too lenient for such a serious crime.", ko: "비평가들은 그러한 중범죄에 비해 선고가 너무 관대하다고 주장했다." }
+      },
+      {
+        id: 15, word: "mandate", pronunciation: "/ˈmændeɪt/", korean: "명령, 위임; 명하다",
+        etymology: [
+          { part: "manus", meaning: "손",              origin: "Latin", color: "#E17055" },
+          { part: "dare",  meaning: "주다, 맡기다",    origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "손(manus)으로 직접 맡겨(dare) 지시하다 → 명령, 위임",
+        situation: { en: "The government issued a mandate requiring all officers to wear body cameras.", ko: "정부는 모든 경찰관이 바디캠을 착용하도록 하는 명령을 내렸다." }
+      },
+      {
+        id: 16, word: "negligence", pronunciation: "/ˈneɡlɪdʒəns/", korean: "과실, 태만",
+        etymology: [
+          { part: "neg-",    meaning: "부정, 아니다",    origin: "Latin", color: "#6C5CE7" },
+          { part: "legere",  meaning: "고르다, 읽다",    origin: "Latin", color: "#A29BFE" },
+          { part: "-ence",   meaning: "명사 접미사",     origin: "Latin", color: "#DFE6E9" }
+        ],
+        mnemonic: "해야 할 것을 고르지(legere) 않는(neg) 것 → 과실, 태만",
+        situation: { en: "The officer was charged with criminal negligence.", ko: "경찰관은 형사 과실로 기소되었다." }
+      },
+      {
+        id: 17, word: "obstruct", pronunciation: "/əbˈstrʌkt/", korean: "방해하다, 차단하다",
+        etymology: [
+          { part: "ob-",    meaning: "맞서, 가로막아",  origin: "Latin", color: "#00CEC9" },
+          { part: "struct", meaning: "쌓다, 세우다",    origin: "Latin", color: "#81ECEC" }
+        ],
+        mnemonic: "앞을 가로막아(ob) 쌓아두다(struct) → 방해하다",
+        situation: { en: "He was arrested for attempting to obstruct justice.", ko: "그는 사법 방해를 시도한 혐의로 체포되었다." }
+      },
+      {
+        id: 18, word: "parole", pronunciation: "/pəˈroʊl/", korean: "가석방; 가석방하다",
+        etymology: [
+          { part: "parole", meaning: "말, 약속의 말",   origin: "French", color: "#FD79A8" },
+          { part: "(parabola)", meaning: "약속",        origin: "Latin",  color: "#E84393" }
+        ],
+        mnemonic: "다시 범죄하지 않겠다는 '말(parole)의 약속'으로 풀려남 → 가석방",
+        situation: { en: "He was released on parole after serving five years.", ko: "그는 5년 복역 후 가석방으로 출소했다." }
+      },
+      {
+        id: 19, word: "recidivism", pronunciation: "/rɪˈsɪdɪvɪzəm/", korean: "재범, 상습범죄",
+        etymology: [
+          { part: "re-",    meaning: "다시",             origin: "Latin", color: "#BADC58" },
+          { part: "cad/cid", meaning: "떨어지다 (cadere)", origin: "Latin", color: "#6AB04C" },
+          { part: "-ism",   meaning: "현상, 주의",       origin: "Latin", color: "#C7ECEE" }
+        ],
+        mnemonic: "다시(re) 범죄로 떨어지는(cadere) 현상(-ism) → 재범",
+        situation: { en: "High recidivism rates highlighted the need for prison reform.", ko: "높은 재범률은 교도소 개혁의 필요성을 부각시켰다." }
+      },
+      {
+        id: 20, word: "subpoena", pronunciation: "/səˈpiːnə/", korean: "소환장; 소환하다",
+        etymology: [
+          { part: "sub-",   meaning: "아래에, 따를 것을", origin: "Latin", color: "#FF7675" },
+          { part: "poena",  meaning: "처벌, 벌",           origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "처벌(poena)을 따르게 하는(sub) 명령서 → 소환장",
+        situation: { en: "The prosecutor issued a subpoena to compel the witness to testify.", ko: "검사는 목격자가 증언하도록 강제하는 소환장을 발부했다." }
+      },
+      {
+        id: 21, word: "testimony", pronunciation: "/ˈtestɪmoʊni/", korean: "증언, 진술",
+        etymology: [
+          { part: "testis",  meaning: "증인, 고환",      origin: "Latin", color: "#FFEAA7" },
+          { part: "-mony",   meaning: "상태, 행위 명사",  origin: "Latin", color: "#FDCB6E" }
+        ],
+        mnemonic: "증인(testis)의 진술 행위(-mony) → 증언",
+        situation: { en: "Her eyewitness testimony was crucial to the conviction.", ko: "그녀의 목격자 증언은 유죄 판결에 결정적이었다." }
+      },
+      {
+        id: 22, word: "verdict", pronunciation: "/ˈvɜːrdɪkt/", korean: "평결, 판결",
+        etymology: [
+          { part: "veri-",  meaning: "진실 (verus)",    origin: "Latin", color: "#74B9FF" },
+          { part: "dict",   meaning: "말하다, 선언",     origin: "Latin", color: "#0984E3" }
+        ],
+        mnemonic: "진실(verus)을 말하는(dict) 것 → 평결",
+        situation: { en: "The jury delivered a not guilty verdict after three days of deliberation.", ko: "배심원단은 사흘간의 숙고 끝에 무죄 평결을 내렸다." }
+      },
+      {
+        id: 23, word: "warrant", pronunciation: "/ˈwɒrənt/", korean: "영장; 보증하다",
+        etymology: [
+          { part: "war-",   meaning: "보증하다 (OldFrench garantir)", origin: "Germanic", color: "#A29BFE" },
+          { part: "-ant",   meaning: "명사/형용사 접미사",            origin: "Latin",    color: "#6C5CE7" }
+        ],
+        mnemonic: "보증(garantir)하는 공식 문서 → 영장",
+        situation: { en: "Police obtained a search warrant before entering the building.", ko: "경찰은 건물에 진입하기 전에 수색 영장을 발부받았다." }
+      },
+      {
+        id: 24, word: "acquit", pronunciation: "/əˈkwɪt/", korean: "무죄 방면하다, 석방하다",
+        etymology: [
+          { part: "ac- (ad-)", meaning: "향하여",         origin: "Latin", color: "#55EFC4" },
+          { part: "quit",      meaning: "자유롭게 하다",   origin: "Latin", color: "#00B894" }
+        ],
+        mnemonic: "자유롭게(quit) 해 주다 → 무죄 방면하다",
+        situation: { en: "The jury acquitted the defendant on all charges.", ko: "배심원단은 피고에게 모든 혐의에 대해 무죄를 선고했다." }
+      },
+      {
+        id: 25, word: "coerce", pronunciation: "/koʊˈɜːrs/", korean: "강제하다, 위협하다",
+        etymology: [
+          { part: "co-",   meaning: "함께, 완전히",    origin: "Latin", color: "#FF9F43" },
+          { part: "erce",  meaning: "가두다, 조이다",   origin: "Latin", color: "#EE5A24" }
+        ],
+        mnemonic: "완전히(co) 가두어(erce) 어쩔 수 없게 하다 → 강제하다",
+        situation: { en: "The confession was obtained by coercing the suspect.", ko: "자백은 용의자를 강제해서 얻어낸 것이었다." }
+      },
+      {
+        id: 26, word: "deter", pronunciation: "/dɪˈtɜːr/", korean: "억제하다, 단념시키다",
+        etymology: [
+          { part: "de-",     meaning: "떨어지게, 멀리",  origin: "Latin", color: "#74B9FF" },
+          { part: "terrere", meaning: "겁주다, 두렵게",   origin: "Latin", color: "#0984E3" }
+        ],
+        mnemonic: "겁을 주어(terrere) 멀리(de) 쫓아버리다 → 억제하다",
+        situation: { en: "Increased patrols were meant to deter criminal activity.", ko: "순찰 강화는 범죄 활동을 억제하기 위한 것이었다." }
+      },
+      {
+        id: 27, word: "embezzle", pronunciation: "/ɪmˈbezəl/", korean: "횡령하다, 착복하다",
+        etymology: [
+          { part: "em- (en-)", meaning: "안으로",          origin: "Old French", color: "#FD79A8" },
+          { part: "bezel",     meaning: "파괴하다, 없애다", origin: "Old French", color: "#E84393" }
+        ],
+        mnemonic: "맡겨진 재산을 안으로 빼돌려(bezel) 없애다 → 횡령하다",
+        situation: { en: "The accountant embezzled millions from the company over ten years.", ko: "회계사는 10년에 걸쳐 회사에서 수백만 달러를 횡령했다." }
+      },
+      {
+        id: 28, word: "fabricate", pronunciation: "/ˈfæbrɪkeɪt/", korean: "조작하다, 날조하다",
+        etymology: [
+          { part: "fabri-", meaning: "기술자, 만드는 사람", origin: "Latin", color: "#BADC58" },
+          { part: "-cate",  meaning: "동사화 접미사",        origin: "Latin", color: "#6AB04C" }
+        ],
+        mnemonic: "없는 것을 장인처럼(fabri) 만들어 내다 → 조작하다",
+        situation: { en: "The officer was dismissed for fabricating evidence.", ko: "경찰관은 증거를 날조한 이유로 해임되었다." }
+      },
+      {
+        id: 29, word: "heinous", pronunciation: "/ˈheɪnəs/", korean: "극악한, 흉악한",
+        etymology: [
+          { part: "haine",  meaning: "증오 (haïr=미워하다)", origin: "Old French", color: "#FF7675" },
+          { part: "-ous",   meaning: "형용사 접미사",          origin: "Latin",      color: "#D63031" }
+        ],
+        mnemonic: "증오(haine)스러울 만큼 나쁜 → 극악한",
+        situation: { en: "The heinous nature of the crime shocked the entire nation.", ko: "범죄의 극악한 성격은 나라 전체를 충격에 빠뜨렸다." }
+      },
+      {
+        id: 30, word: "implicate", pronunciation: "/ˈɪmplɪkeɪt/", korean: "연루시키다, 관련짓다",
+        etymology: [
+          { part: "im- (in-)", meaning: "안으로",         origin: "Latin", color: "#C77DFF" },
+          { part: "plicare",   meaning: "접다, 얽히다",    origin: "Latin", color: "#9D4EDD" },
+          { part: "-ate",      meaning: "동사화 접미사",   origin: "Latin", color: "#E0AAFF" }
+        ],
+        mnemonic: "사건 안으로(in) 접어 넣다(plicare) → 연루시키다",
+        situation: { en: "New evidence implicated a second suspect in the robbery.", ko: "새로운 증거가 강도 사건에 두 번째 용의자를 연루시켰다." }
+      },
+      {
+        id: 31, word: "jeopardize", pronunciation: "/ˈdʒepərˌdaɪz/", korean: "위험에 빠뜨리다",
+        etymology: [
+          { part: "jeu parti", meaning: "나뉜 게임 (동등한 위험)", origin: "Old French", color: "#FF9F43" },
+          { part: "-ize",      meaning: "동사화 접미사",             origin: "Greek",      color: "#FECA57" }
+        ],
+        mnemonic: "승패가 갈리는 위험한 게임(jeu parti)에 처하게 하다 → 위험에 빠뜨리다",
+        situation: { en: "Leaking information would jeopardize the entire operation.", ko: "정보를 유출하면 작전 전체를 위험에 빠뜨릴 것이었다." }
+      },
+      {
+        id: 32, word: "larceny", pronunciation: "/ˈlɑːrsəni/", korean: "절도죄",
+        etymology: [
+          { part: "latro",  meaning: "도둑, 강도",      origin: "Latin",  color: "#74B9FF" },
+          { part: "-ceny",  meaning: "행위 (larcinium)", origin: "French", color: "#0984E3" }
+        ],
+        mnemonic: "도둑(latro)질 행위 → 절도죄",
+        situation: { en: "He was convicted of grand larceny for stealing the vehicle.", ko: "그는 차량 절도로 중절도죄 판결을 받았다." }
+      },
+      {
+        id: 33, word: "malicious", pronunciation: "/məˈlɪʃəs/", korean: "악의적인, 적의 있는",
+        etymology: [
+          { part: "mal-",   meaning: "나쁜, 악한",       origin: "Latin", color: "#FF6B6B" },
+          { part: "malice", meaning: "악의 (malitia)",    origin: "Latin", color: "#EE5A24" },
+          { part: "-ious",  meaning: "형용사 접미사",     origin: "Latin", color: "#FFA07A" }
+        ],
+        mnemonic: "나쁜(mal) 의도(malitia)로 가득 찬 → 악의적인",
+        situation: { en: "The malicious attack targeted vulnerable elderly victims.", ko: "악의적인 공격은 취약한 노인 피해자들을 겨냥했다." }
+      },
+      {
+        id: 34, word: "perjury", pronunciation: "/ˈpɜːrdʒəri/", korean: "위증죄",
+        etymology: [
+          { part: "per-",  meaning: "그릇되게, 거짓으로", origin: "Latin", color: "#A8E6CF" },
+          { part: "jur-",  meaning: "맹세하다 (jurare)",   origin: "Latin", color: "#00CEC9" },
+          { part: "-y",    meaning: "명사 접미사",          origin: "Latin", color: "#B5EAD7" }
+        ],
+        mnemonic: "거짓으로(per) 맹세하는(jurare) 것 → 위증죄",
+        situation: { en: "The witness was charged with perjury after lying under oath.", ko: "목격자는 선서 후 거짓말을 한 혐의로 위증죄로 기소되었다." }
+      },
+      {
+        id: 35, word: "sanction", pronunciation: "/ˈsæŋkʃən/", korean: "제재; 승인하다",
+        etymology: [
+          { part: "sanct-", meaning: "신성하게 하다 (sancire)", origin: "Latin", color: "#E17055" },
+          { part: "-ion",   meaning: "명사 접미사",              origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "법으로 신성하게(sancire) 정한 것 → 제재 또는 공식 승인",
+        situation: { en: "International sanctions were imposed on the regime.", ko: "그 정권에 국제적 제재가 부과되었다." }
+      },
+      {
+        id: 36, word: "trespass", pronunciation: "/ˈtrespæs/", korean: "무단침입하다; 침범",
+        etymology: [
+          { part: "tres- (trans-)", meaning: "가로질러, 넘어",   origin: "Latin",  color: "#6C5CE7" },
+          { part: "pass",           meaning: "지나가다 (passer)", origin: "French", color: "#A29BFE" }
+        ],
+        mnemonic: "경계를 넘어(trans) 지나가다(pass) → 무단침입",
+        situation: { en: "He was arrested for trespassing on private property.", ko: "그는 사유지에 무단침입한 혐의로 체포되었다." }
+      },
+      {
+        id: 37, word: "vigilant", pronunciation: "/ˈvɪdʒɪlənt/", korean: "경계하는, 방심하지 않는",
+        etymology: [
+          { part: "vigil",  meaning: "깨어있음, 불침번",  origin: "Latin", color: "#FFEAA7" },
+          { part: "-ant",   meaning: "형용사 접미사",      origin: "Latin", color: "#FDCB6E" }
+        ],
+        mnemonic: "항상 깨어(vigil) 있는 → 경계하는",
+        situation: { en: "Officers must remain vigilant during night patrols.", ko: "경찰관들은 야간 순찰 중 경계를 늦추지 말아야 한다." }
+      },
+      {
+        id: 38, word: "abduct", pronunciation: "/æbˈdʌkt/", korean: "납치하다, 유괴하다",
+        etymology: [
+          { part: "ab-",   meaning: "떨어져, 멀리",     origin: "Latin", color: "#55EFC4" },
+          { part: "duct",  meaning: "이끌다 (ducere)",   origin: "Latin", color: "#00B894" }
+        ],
+        mnemonic: "사람을 강제로 이끌어(ducere) 멀리(ab) 데려가다 → 납치하다",
+        situation: { en: "The child was abducted on her way home from school.", ko: "아이는 학교에서 집으로 오는 길에 납치되었다." }
+      },
+      {
+        id: 39, word: "circumvent", pronunciation: "/ˌsɜːrkəmˈvent/", korean: "우회하다, 교묘히 피하다",
+        etymology: [
+          { part: "circum-", meaning: "주위를, 돌아서",   origin: "Latin", color: "#FD79A8" },
+          { part: "vent",    meaning: "오다 (venire)",     origin: "Latin", color: "#E84393" }
+        ],
+        mnemonic: "주위를(circum) 돌아 오다(venire) → 우회하다, 교묘히 피하다",
+        situation: { en: "He tried to circumvent the security system.", ko: "그는 보안 시스템을 교묘히 피하려 했다." }
+      },
+      {
+        id: 40, word: "denounce", pronunciation: "/dɪˈnaʊns/", korean: "고발하다, 규탄하다",
+        etymology: [
+          { part: "de-",    meaning: "공개적으로, 완전히", origin: "Latin", color: "#C77DFF" },
+          { part: "nounce", meaning: "알리다 (nuntiare)",   origin: "Latin", color: "#9D4EDD" }
+        ],
+        mnemonic: "공개적으로(de) 알려(nuntiare) 비난하다 → 고발하다",
+        situation: { en: "The witness denounced the corrupt official to authorities.", ko: "목격자는 부패한 공무원을 당국에 고발했다." }
+      },
+      {
+        id: 41, word: "extradite", pronunciation: "/ˈekstrədaɪt/", korean: "범죄인을 인도하다",
+        etymology: [
+          { part: "extra-", meaning: "밖으로, 외부로",  origin: "Latin", color: "#FF6B6B" },
+          { part: "dite",   meaning: "주다 (tradere)",   origin: "Latin", color: "#EE5A24" }
+        ],
+        mnemonic: "범인을 다른 나라에 밖으로(extra) 넘겨주다(tradere) → 인도하다",
+        situation: { en: "The fugitive was extradited from Spain to face trial.", ko: "도주범은 재판을 받기 위해 스페인에서 인도되었다." }
+      },
+      {
+        id: 42, word: "felony", pronunciation: "/ˈfeləni/", korean: "중죄, 흉악범죄",
+        etymology: [
+          { part: "felon",  meaning: "악인, 배신자",     origin: "Medieval Latin", color: "#74B9FF" },
+          { part: "-y",     meaning: "명사 접미사",       origin: "Latin",          color: "#0984E3" }
+        ],
+        mnemonic: "악인(felon)이 저지르는 행위 → 중죄",
+        situation: { en: "Armed robbery is classified as a felony in all jurisdictions.", ko: "무장 강도는 모든 관할 구역에서 중죄로 분류된다." }
+      },
+      {
+        id: 43, word: "indict", pronunciation: "/ɪnˈdaɪt/", korean: "기소하다, 대배심 기소하다",
+        etymology: [
+          { part: "in-",   meaning: "향하여, 공식으로",  origin: "Latin", color: "#A8E6CF" },
+          { part: "dict",  meaning: "말하다, 선언하다",   origin: "Latin", color: "#00CEC9" }
+        ],
+        mnemonic: "공식적으로(in) 범죄를 선언(dict)하다 → 기소하다",
+        situation: { en: "The grand jury voted to indict the former officer.", ko: "대배심은 전직 경찰관을 기소하기로 표결했다." }
+      },
+      {
+        id: 44, word: "juvenile", pronunciation: "/ˈdʒuːvənaɪl/", korean: "청소년의; 미성년자",
+        etymology: [
+          { part: "juvenis", meaning: "젊은, 청소년",   origin: "Latin", color: "#BADC58" },
+          { part: "-ile",    meaning: "형용사 접미사",   origin: "Latin", color: "#6AB04C" }
+        ],
+        mnemonic: "젊은(juvenis) 사람에 관한 → 청소년의",
+        situation: { en: "Juvenile offenders are handled by a separate court system.", ko: "청소년 범죄자는 별도의 법원 시스템에서 처리된다." }
+      },
+      {
+        id: 45, word: "liable", pronunciation: "/ˈlaɪəbəl/", korean: "법적 책임이 있는, ~할 가능성이 있는",
+        etymology: [
+          { part: "li-",   meaning: "묶다 (ligare)",    origin: "Latin",  color: "#E17055" },
+          { part: "-able", meaning: "~할 수 있는",       origin: "French", color: "#D63031" }
+        ],
+        mnemonic: "법적 의무에 묶여(ligare) 있는 → 책임이 있는",
+        situation: { en: "The department was held liable for the officer's misconduct.", ko: "부서는 경찰관의 비위 행위에 대해 법적 책임을 지게 되었다." }
+      },
+      {
+        id: 46, word: "misdemeanor", pronunciation: "/ˌmɪsdɪˈmiːnər/", korean: "경범죄",
+        etymology: [
+          { part: "mis-",    meaning: "잘못된, 나쁜",    origin: "Old French", color: "#6C5CE7" },
+          { part: "demean",  meaning: "처신하다, 행동",   origin: "Old French", color: "#A29BFE" },
+          { part: "-or",     meaning: "명사 접미사",      origin: "Latin",      color: "#DFE6E9" }
+        ],
+        mnemonic: "잘못된(mis) 행동(demean) → 경범죄",
+        situation: { en: "Petty theft is usually charged as a misdemeanor.", ko: "경미한 절도는 보통 경범죄로 기소된다." }
+      },
+      {
+        id: 47, word: "narcotics", pronunciation: "/nɑːrˈkɒtɪks/", korean: "마약류",
+        etymology: [
+          { part: "narke",  meaning: "마비, 무감각",     origin: "Greek", color: "#FF7675" },
+          { part: "-tic",   meaning: "관련된",            origin: "Greek", color: "#D63031" },
+          { part: "-s",     meaning: "복수",              origin: "Latin", color: "#FFA07A" }
+        ],
+        mnemonic: "감각을 마비(narke)시키는 것들 → 마약류",
+        situation: { en: "The narcotics division made its largest seizure to date.", ko: "마약 수사대는 사상 최대의 압수 성과를 거뒀다." }
+      },
+      {
+        id: 48, word: "plead", pronunciation: "/pliːd/", korean: "변론하다, 호소하다, 답변하다",
+        etymology: [
+          { part: "plaid",  meaning: "소송, 변론 (placitum)", origin: "Old French", color: "#C77DFF" }
+        ],
+        mnemonic: "법정 소송(plaid)에서 입장을 밝히다 → 변론하다",
+        situation: { en: "The defendant pleaded not guilty to all charges.", ko: "피고는 모든 혐의에 대해 무죄를 주장했다." }
+      },
+      {
+        id: 49, word: "suppress", pronunciation: "/səˈpres/", korean: "진압하다, 억누르다",
+        etymology: [
+          { part: "sub-",  meaning: "아래에, 아래로",  origin: "Latin", color: "#00B894" },
+          { part: "press", meaning: "누르다",           origin: "Latin", color: "#55EFC4" }
+        ],
+        mnemonic: "아래로(sub) 눌러(press) 꺼뜨리다 → 진압하다",
+        situation: { en: "Riot police were deployed to suppress the violent protest.", ko: "진압 경찰이 폭력 시위를 진압하기 위해 투입되었다." }
+      },
+      {
+        id: 50, word: "trafficking", pronunciation: "/ˈtræfɪkɪŋ/", korean: "인신매매; 밀매",
+        etymology: [
+          { part: "traffico", meaning: "무역, 거래",    origin: "Italian", color: "#FFEAA7" },
+          { part: "-ing",     meaning: "동명사 접미사",  origin: "English", color: "#FDCB6E" }
+        ],
+        mnemonic: "사람을 물건처럼 거래(traffico)하는 행위 → 인신매매",
+        situation: { en: "The operation dismantled a major human trafficking ring.", ko: "작전은 대규모 인신매매 조직을 해체했다." }
+      },
+      {
+        id: 51, word: "vandalism", pronunciation: "/ˈvændəlɪzəm/", korean: "기물 파손",
+        etymology: [
+          { part: "Vandals", meaning: "게르만 약탈 부족",  origin: "Latin",   color: "#FF9F43" },
+          { part: "-ism",    meaning: "행위, 현상",         origin: "Greek",   color: "#EE5A24" }
+        ],
+        mnemonic: "로마를 약탈한 반달족(Vandals)처럼 파괴하는 행위 → 기물 파손",
+        situation: { en: "Several acts of vandalism were reported near the school.", ko: "학교 근처에서 몇 건의 기물 파손이 신고되었다." }
+      },
+      {
+        id: 52, word: "waive", pronunciation: "/weɪv/", korean: "포기하다, 권리를 유보하다",
+        etymology: [
+          { part: "waive",  meaning: "버리다, 포기하다 (Old Norse veifa)", origin: "Old French", color: "#74B9FF" }
+        ],
+        mnemonic: "손을 흔들듯(wave와 유사) 권리를 떨쳐버리다 → 포기하다",
+        situation: { en: "The suspect waived his right to an attorney.", ko: "용의자는 변호인 선임 권리를 포기했다." }
+      },
+      {
+        id: 53, word: "extort", pronunciation: "/ɪkˈstɔːrt/", korean: "강탈하다, 갈취하다",
+        etymology: [
+          { part: "ex-",   meaning: "밖으로, 강제로",   origin: "Latin", color: "#A8E6CF" },
+          { part: "tort",  meaning: "비틀다 (torquere)", origin: "Latin", color: "#7FDBDA" }
+        ],
+        mnemonic: "비틀어(torquere) 강제로 밖으로(ex) 빼앗다 → 강탈하다",
+        situation: { en: "The gang extorted money from local business owners.", ko: "갱단은 지역 사업주들로부터 돈을 강탈했다." }
+      },
+      {
+        id: 54, word: "abscond", pronunciation: "/æbˈskɒnd/", korean: "도주하다, 잠적하다",
+        etymology: [
+          { part: "ab-",   meaning: "멀리, 떨어져",    origin: "Latin", color: "#E17055" },
+          { part: "cond",  meaning: "숨기다 (condere)", origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "멀리(ab) 숨어(condere) 버리다 → 도주하다",
+        situation: { en: "The embezzler absconded with company funds to another country.", ko: "횡령범은 회사 자금을 가지고 다른 나라로 잠적했다." }
+      },
+      {
+        id: 55, word: "confiscate", pronunciation: "/ˈkɒnfɪskeɪt/", korean: "몰수하다, 압수하다",
+        etymology: [
+          { part: "con-",   meaning: "함께, 완전히",       origin: "Latin", color: "#6C5CE7" },
+          { part: "fiscal", meaning: "국고, 재무 (fiscus)", origin: "Latin", color: "#A29BFE" },
+          { part: "-ate",   meaning: "동사화 접미사",       origin: "Latin", color: "#DFE6E9" }
+        ],
+        mnemonic: "국고(fiscus)로 완전히(con) 귀속시키다 → 몰수하다",
+        situation: { en: "Police confiscated illegal weapons found in the apartment.", ko: "경찰은 아파트에서 발견된 불법 무기를 압수했다." }
+      },
+      {
+        id: 56, word: "delinquent", pronunciation: "/dɪˈlɪŋkwənt/", korean: "비행의; 비행 청소년",
+        etymology: [
+          { part: "de-",      meaning: "떠나서, 벗어나",    origin: "Latin", color: "#BADC58" },
+          { part: "linquere", meaning: "떠나다, 버리다",     origin: "Latin", color: "#6AB04C" },
+          { part: "-ent",     meaning: "명사/형용사 접미사", origin: "Latin", color: "#C7ECEE" }
+        ],
+        mnemonic: "의무를 떠나(linquere) 버린(de) 사람 → 비행자",
+        situation: { en: "Juvenile delinquents were referred to a rehabilitation program.", ko: "비행 청소년들은 재활 프로그램으로 보내졌다." }
+      },
+      {
+        id: 57, word: "fraudulent", pronunciation: "/ˈfrɔːdʒʊlənt/", korean: "사기의, 기만적인",
+        etymology: [
+          { part: "fraud",   meaning: "속임, 사기",      origin: "Latin", color: "#FF7675" },
+          { part: "-ulent",  meaning: "가득 찬 형용사",   origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "속임(fraud)으로 가득(-ulent) 찬 → 사기의",
+        situation: { en: "The agent was arrested for fraudulent insurance claims.", ko: "그 중개인은 사기성 보험 청구로 체포되었다." }
+      },
+      {
+        id: 58, word: "hostage", pronunciation: "/ˈhɒstɪdʒ/", korean: "인질",
+        etymology: [
+          { part: "hostis",  meaning: "낯선 자, 적",      origin: "Latin",      color: "#4ECDC4" },
+          { part: "-age",    meaning: "상태, 신분 명사",   origin: "Old French", color: "#45B7D1" }
+        ],
+        mnemonic: "낯선 적(hostis)에게 붙잡힌 신세(-age) → 인질",
+        situation: { en: "Negotiators worked to secure the release of the hostages.", ko: "협상가들은 인질 석방을 확보하기 위해 노력했다." }
+      },
+      {
+        id: 59, word: "immunity", pronunciation: "/ɪˈmjuːnɪti/", korean: "면책, 면역, 불소추 특권",
+        etymology: [
+          { part: "im-",   meaning: "~이 아닌",          origin: "Latin", color: "#96CEB4" },
+          { part: "munus", meaning: "의무, 직무, 봉사",   origin: "Latin", color: "#88D8B0" },
+          { part: "-ity",  meaning: "명사 접미사",        origin: "Latin", color: "#A8E6CF" }
+        ],
+        mnemonic: "의무(munus)가 없는(im) 상태 → 면책, 면역",
+        situation: { en: "The informant was granted immunity in exchange for testimony.", ko: "정보원은 증언의 대가로 면책 특권을 부여받았다." }
+      },
+      {
+        id: 60, word: "injunction", pronunciation: "/ɪnˈdʒʌŋkʃən/", korean: "금지 명령",
+        etymology: [
+          { part: "in-",    meaning: "향하여",             origin: "Latin", color: "#FF9F43" },
+          { part: "junct",  meaning: "연결하다 (jungere)", origin: "Latin", color: "#EE5A24" },
+          { part: "-ion",   meaning: "명사 접미사",        origin: "Latin", color: "#FECA57" }
+        ],
+        mnemonic: "법원이 연결하여(jungere) 명하는(in) 것 → 금지 명령",
+        situation: { en: "The court issued an injunction to stop the demolition.", ko: "법원은 철거를 중단시키는 금지 명령을 내렸다." }
+      },
+      {
+        id: 61, word: "misconduct", pronunciation: "/ˌmɪsˈkɒndʌkt/", korean: "비위행위, 직권남용",
+        etymology: [
+          { part: "mis-",    meaning: "잘못된",              origin: "Old English", color: "#C77DFF" },
+          { part: "conduct", meaning: "이끌다, 행동 (ducere)", origin: "Latin",       color: "#9D4EDD" }
+        ],
+        mnemonic: "잘못된(mis) 방식으로 이끄는(conduct) 행동 → 비위행위",
+        situation: { en: "The officer faced dismissal for gross misconduct.", ko: "경찰관은 심각한 비위행위로 해임 위기에 처했다." }
+      },
+      {
+        id: 62, word: "perpetual", pronunciation: "/pərˈpetʃuəl/", korean: "영속적인, 끊임없는",
+        etymology: [
+          { part: "per-",    meaning: "완전히, 끝까지",    origin: "Latin", color: "#74B9FF" },
+          { part: "petere",  meaning: "추구하다, 향하다",   origin: "Latin", color: "#0984E3" },
+          { part: "-al",     meaning: "형용사 접미사",      origin: "Latin", color: "#A29BFE" }
+        ],
+        mnemonic: "끝까지(per) 계속 추구하는(petere) → 영속적인",
+        situation: { en: "The area was in a state of perpetual conflict.", ko: "그 지역은 끊임없는 분쟁 상태에 있었다." }
+      },
+      {
+        id: 63, word: "ransom", pronunciation: "/ˈrænsəm/", korean: "몸값; 몸값을 요구하다",
+        etymology: [
+          { part: "re-",      meaning: "다시",                    origin: "Latin",      color: "#FFEAA7" },
+          { part: "emptio",   meaning: "사다, 구입 (emere)",       origin: "Latin",      color: "#FDCB6E" },
+          { part: "(rançon)", meaning: "몸값으로 돌려받기",        origin: "Old French", color: "#F9CA24" }
+        ],
+        mnemonic: "사람을 다시(re) 사는(emere) 값 → 몸값",
+        situation: { en: "The kidnappers demanded a ransom of one million dollars.", ko: "납치범들은 100만 달러의 몸값을 요구했다." }
+      },
+      {
+        id: 64, word: "solicit", pronunciation: "/səˈlɪsɪt/", korean: "권유하다, 청탁하다",
+        etymology: [
+          { part: "sollus",  meaning: "전체, 모두",           origin: "Latin", color: "#FF7675" },
+          { part: "cit",     meaning: "움직이다, 자극하다",    origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "전체적으로(sollus) 자극하여(cit) 끌어들이다 → 청탁하다",
+        situation: { en: "He was caught soliciting bribes from contractors.", ko: "그는 계약업체들에게 뇌물을 청탁하다 적발되었다." }
+      },
+      {
+        id: 65, word: "tribunal", pronunciation: "/traɪˈbjuːnəl/", korean: "법정, 재판소",
+        etymology: [
+          { part: "tribun-", meaning: "호민관, 심판관 (tribunus)", origin: "Latin", color: "#6C5CE7" },
+          { part: "-al",     meaning: "명사/형용사 접미사",        origin: "Latin", color: "#A29BFE" }
+        ],
+        mnemonic: "심판관(tribunus)이 앉는 자리 → 법정",
+        situation: { en: "The case was referred to an international tribunal.", ko: "그 사건은 국제 재판소에 회부되었다." }
+      },
+      {
+        id: 66, word: "violate", pronunciation: "/ˈvaɪəleɪt/", korean: "위반하다, 침해하다",
+        etymology: [
+          { part: "violare", meaning: "힘으로 다치게 하다",  origin: "Latin", color: "#55EFC4" },
+          { part: "(vis)",   meaning: "힘, 폭력",             origin: "Latin", color: "#00B894" },
+          { part: "-ate",    meaning: "동사화 접미사",        origin: "Latin", color: "#B5EAD7" }
+        ],
+        mnemonic: "힘으로(vis) 경계를 넘어 해치다(violare) → 위반하다",
+        situation: { en: "Officers who violate civil rights face serious consequences.", ko: "시민권을 침해하는 경찰관은 심각한 결과에 직면한다." }
+      },
+      {
+        id: 67, word: "forfeit", pronunciation: "/ˈfɔːrfɪt/", korean: "몰수되다, 상실하다; 벌금",
+        etymology: [
+          { part: "for-",  meaning: "밖에서, 위반하여",  origin: "Latin",  color: "#FF6B6B" },
+          { part: "fait",  meaning: "행한 것 (facere)",  origin: "French", color: "#EE5A24" }
+        ],
+        mnemonic: "규정 밖에서(for) 한 행위(fait)의 결과 → 몰수, 상실",
+        situation: { en: "He forfeited his bail by failing to appear in court.", ko: "그는 법정에 출두하지 않아 보석금을 몰수당했다." }
+      },
+      {
+        id: 68, word: "grievance", pronunciation: "/ˈɡriːvəns/", korean: "불만, 고충, 억울함",
+        etymology: [
+          { part: "grieve",  meaning: "무거운 짐 (gravis)", origin: "Old French", color: "#74B9FF" },
+          { part: "-ance",   meaning: "명사 접미사",         origin: "Latin",      color: "#0984E3" }
+        ],
+        mnemonic: "무거운 짐(gravis)처럼 짓누르는 것 → 불만, 억울함",
+        situation: { en: "Officers filed a formal grievance against the new policy.", ko: "경찰관들은 새 정책에 대해 공식 이의를 제기했다." }
+      },
+      {
+        id: 69, word: "nefarious", pronunciation: "/nɪˈfeəriəs/", korean: "극악한, 사악한",
+        etymology: [
+          { part: "ne-",  meaning: "부정, 아닌",          origin: "Latin", color: "#C77DFF" },
+          { part: "fas",  meaning: "신성한 법, 옳은 것",   origin: "Latin", color: "#9D4EDD" },
+          { part: "-ious", meaning: "형용사 접미사",       origin: "Latin", color: "#E0AAFF" }
+        ],
+        mnemonic: "신성한 법(fas)에도 어긋나는(ne) → 극악한",
+        situation: { en: "The detective uncovered the gang's nefarious activities.", ko: "형사는 갱단의 극악한 활동을 밝혀냈다." }
+      },
+      {
+        id: 70, word: "obstinate", pronunciation: "/ˈɒbstɪnət/", korean: "완고한, 고집 센",
+        etymology: [
+          { part: "ob-",    meaning: "맞서, 반대로",      origin: "Latin", color: "#BADC58" },
+          { part: "stare",  meaning: "서다, 버티다",       origin: "Latin", color: "#6AB04C" },
+          { part: "-ate",   meaning: "형용사 접미사",      origin: "Latin", color: "#C7ECEE" }
+        ],
+        mnemonic: "맞서서(ob) 꿋꿋이 버티는(stare) → 완고한",
+        situation: { en: "The obstinate suspect refused to cooperate with investigators.", ko: "완고한 용의자는 수사관과의 협조를 거부했다." }
+      },
+      {
+        id: 71, word: "apprehend", pronunciation: "/ˌæprɪˈhend/", korean: "체포하다, 이해하다",
+        etymology: [
+          { part: "ap- (ad-)", meaning: "향하여",              origin: "Latin", color: "#FF9F43" },
+          { part: "prehend",   meaning: "잡다 (prehendere)",    origin: "Latin", color: "#EE5A24" }
+        ],
+        mnemonic: "향해서(ad) 손으로 잡다(prehendere) → 체포하다",
+        situation: { en: "Officers apprehended the fleeing suspect near the border.", ko: "경찰관들은 국경 근처에서 도주하는 용의자를 체포했다." }
+      },
+      {
+        id: 72, word: "assault", pronunciation: "/əˈsɔːlt/", korean: "폭행, 폭행하다",
+        etymology: [
+          { part: "as- (ad-)", meaning: "향하여",          origin: "Latin", color: "#A8E6CF" },
+          { part: "salt",      meaning: "뛰다 (saltare)",   origin: "Latin", color: "#7FDBDA" }
+        ],
+        mnemonic: "~을 향해(ad) 달려들다(saltare) → 폭행",
+        situation: { en: "He was charged with assault and battery.", ko: "그는 폭행 및 상해죄로 기소되었다." }
+      },
+      {
+        id: 73, word: "burglary", pronunciation: "/ˈbɜːrɡləri/", korean: "주거침입절도",
+        etymology: [
+          { part: "burg",  meaning: "건물, 성채 (burgus)", origin: "Medieval Latin", color: "#E17055" },
+          { part: "-lary", meaning: "절도 행위",           origin: "Latin",          color: "#D63031" }
+        ],
+        mnemonic: "건물(burg)에 침입하는 절도 행위 → 주거침입절도",
+        situation: { en: "The burglary suspect was caught on security cameras.", ko: "주거침입절도 용의자가 보안 카메라에 포착되었다." }
+      },
+      {
+        id: 74, word: "contempt", pronunciation: "/kənˈtempt/", korean: "경멸, 법정 모독",
+        etymology: [
+          { part: "con-",    meaning: "완전히",              origin: "Latin", color: "#6C5CE7" },
+          { part: "tempt",   meaning: "경시하다 (temnere)",   origin: "Latin", color: "#A29BFE" }
+        ],
+        mnemonic: "완전히(con) 깔보고 경시하다(temnere) → 경멸, 법정 모독",
+        situation: { en: "The witness was held in contempt of court for refusing to testify.", ko: "목격자는 증언 거부로 법정 모독죄가 적용되었다." }
+      },
+      {
+        id: 75, word: "custody", pronunciation: "/ˈkʌstədi/", korean: "구금, 보호 (양육권)",
+        etymology: [
+          { part: "custos",  meaning: "경비원, 보호자",    origin: "Latin", color: "#FFEAA7" },
+          { part: "-y",      meaning: "명사 접미사",       origin: "Latin", color: "#FDCB6E" }
+        ],
+        mnemonic: "보호자(custos)가 맡아 지키는 상태 → 구금, 보호",
+        situation: { en: "The suspect was taken into custody at the scene.", ko: "용의자는 현장에서 구금되었다." }
+      },
+      {
+        id: 76, word: "defamation", pronunciation: "/ˌdefəˈmeɪʃən/", korean: "명예훼손",
+        etymology: [
+          { part: "de-",   meaning: "떨어뜨리다, 나쁘게", origin: "Latin", color: "#FF7675" },
+          { part: "fama",  meaning: "명성, 평판",          origin: "Latin", color: "#D63031" },
+          { part: "-tion", meaning: "명사 접미사",         origin: "Latin", color: "#FFA07A" }
+        ],
+        mnemonic: "명성(fama)을 떨어뜨리는(de) 행위 → 명예훼손",
+        situation: { en: "He sued the newspaper for defamation.", ko: "그는 신문사를 명예훼손으로 고소했다." }
+      },
+      {
+        id: 77, word: "defraud", pronunciation: "/dɪˈfrɔːd/", korean: "사기 치다, 편취하다",
+        etymology: [
+          { part: "de-",   meaning: "완전히, 빼앗아",   origin: "Latin", color: "#C77DFF" },
+          { part: "fraud", meaning: "속임, 사기",        origin: "Latin", color: "#9D4EDD" }
+        ],
+        mnemonic: "사기(fraud)로 완전히(de) 빼앗다 → 사기 치다",
+        situation: { en: "He defrauded elderly victims of their retirement savings.", ko: "그는 노인 피해자들의 퇴직금을 편취했다." }
+      },
+      {
+        id: 78, word: "duress", pronunciation: "/djʊˈres/", korean: "강박, 협박에 의한 강제",
+        etymology: [
+          { part: "dur-",   meaning: "딱딱한, 가혹한 (durus)", origin: "Latin",      color: "#55EFC4" },
+          { part: "-esse",  meaning: "상태 (명사 접미사)",       origin: "Old French", color: "#00B894" }
+        ],
+        mnemonic: "가혹하게(durus) 압박받는 상태 → 강박",
+        situation: { en: "The contract was signed under duress and therefore invalid.", ko: "계약은 강박 하에 서명된 것이므로 무효였다." }
+      },
+      {
+        id: 79, word: "entice", pronunciation: "/ɪnˈtaɪs/", korean: "유혹하다, 꾀다",
+        etymology: [
+          { part: "en-",     meaning: "안으로",              origin: "Old French", color: "#74B9FF" },
+          { part: "tice",    meaning: "불꽃, 유인 (tizon)",   origin: "Old French", color: "#0984E3" }
+        ],
+        mnemonic: "불꽃(tizon)으로 안으로(en) 끌어들이다 → 유혹하다",
+        situation: { en: "The predator used gifts to entice his victims.", ko: "범인은 선물을 이용해 피해자들을 꾀었다." }
+      },
+      {
+        id: 80, word: "evade", pronunciation: "/ɪˈveɪd/", korean: "피하다, 회피하다",
+        etymology: [
+          { part: "e- (ex-)", meaning: "밖으로",          origin: "Latin", color: "#A8E6CF" },
+          { part: "vade",     meaning: "가다 (vadere)",    origin: "Latin", color: "#7FDBDA" }
+        ],
+        mnemonic: "밖으로(ex) 빠져나가다(vadere) → 피하다",
+        situation: { en: "The suspect tried to evade capture by changing his appearance.", ko: "용의자는 외모를 바꿔 체포를 피하려 했다." }
+      },
+      {
+        id: 81, word: "facilitate", pronunciation: "/fəˈsɪlɪteɪt/", korean: "촉진하다, 용이하게 하다",
+        etymology: [
+          { part: "facil-",  meaning: "쉬운 (facilis)",   origin: "Latin", color: "#BADC58" },
+          { part: "-itate",  meaning: "동사화 접미사",     origin: "Latin", color: "#6AB04C" }
+        ],
+        mnemonic: "쉽게(facilis) 만들다 → 촉진하다, 용이하게 하다",
+        situation: { en: "The officer facilitated the prisoner transfer.", ko: "경찰관은 수감자 이송을 도왔다." }
+      },
+      {
+        id: 82, word: "fugitive", pronunciation: "/ˈfjuːdʒɪtɪv/", korean: "도주자, 도망자",
+        etymology: [
+          { part: "fugit-",  meaning: "달아나다 (fugere)", origin: "Latin", color: "#FF7675" },
+          { part: "-ive",    meaning: "경향이 있는, 사람", origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "달아나는(fugere) 사람(-ive) → 도주자",
+        situation: { en: "The fugitive was captured after three weeks on the run.", ko: "도주자는 3주간의 도주 끝에 체포되었다." }
+      },
+      {
+        id: 83, word: "indictment", pronunciation: "/ɪnˈdaɪtmənt/", korean: "기소장, 고발",
+        etymology: [
+          { part: "in-",     meaning: "공식으로",           origin: "Latin", color: "#E17055" },
+          { part: "dict",    meaning: "말하다, 선언",        origin: "Latin", color: "#D63031" },
+          { part: "-ment",   meaning: "명사 접미사",        origin: "Latin", color: "#FAB1A0" }
+        ],
+        mnemonic: "공식 선언(dict) 문서(-ment) → 기소장",
+        situation: { en: "The indictment listed twelve separate criminal charges.", ko: "기소장에는 열두 가지 별도의 형사 혐의가 나열되었다." }
+      },
+      {
+        id: 84, word: "informant", pronunciation: "/ɪnˈfɔːrmənt/", korean: "정보원, 밀고자",
+        etymology: [
+          { part: "in-",    meaning: "안으로",              origin: "Latin", color: "#6C5CE7" },
+          { part: "form",   meaning: "형태 짓다, 알리다",   origin: "Latin", color: "#A29BFE" },
+          { part: "-ant",   meaning: "사람 명사 접미사",    origin: "Latin", color: "#DFE6E9" }
+        ],
+        mnemonic: "안쪽 정보를 알려주는(inform) 사람(-ant) → 정보원",
+        situation: { en: "A confidential informant tipped off police about the shipment.", ko: "비밀 정보원이 경찰에게 적재 물품에 대한 정보를 귀띔했다." }
+      },
+      {
+        id: 85, word: "instigate", pronunciation: "/ˈɪnstɪɡeɪt/", korean: "선동하다, 부추기다",
+        etymology: [
+          { part: "in-",    meaning: "~을 향해",          origin: "Latin", color: "#FFEAA7" },
+          { part: "stigare", meaning: "찌르다, 자극하다", origin: "Latin", color: "#FDCB6E" },
+          { part: "-ate",   meaning: "동사화 접미사",     origin: "Latin", color: "#F9CA24" }
+        ],
+        mnemonic: "찌르듯(stigare) 자극하여(in) 행동하게 하다 → 선동하다",
+        situation: { en: "He was accused of instigating the riot.", ko: "그는 폭동을 선동한 혐의를 받았다." }
+      },
+      {
+        id: 86, word: "intimidate", pronunciation: "/ɪnˈtɪmɪdeɪt/", korean: "겁을 주다, 위협하다",
+        etymology: [
+          { part: "in-",    meaning: "안으로",                origin: "Latin", color: "#FF9F43" },
+          { part: "timid-", meaning: "두려운 (timidus)",       origin: "Latin", color: "#EE5A24" },
+          { part: "-ate",   meaning: "동사화 접미사",          origin: "Latin", color: "#FECA57" }
+        ],
+        mnemonic: "두렵게(timidus) 만들어 안으로(in) 위축시키다 → 겁을 주다",
+        situation: { en: "The gang tried to intimidate witnesses into silence.", ko: "갱단은 목격자들을 협박해 침묵시키려 했다." }
+      },
+      {
+        id: 87, word: "malfeasance", pronunciation: "/mælˈfiːzəns/", korean: "직권남용, 불법행위",
+        etymology: [
+          { part: "mal-",    meaning: "나쁜",                 origin: "Latin",  color: "#C77DFF" },
+          { part: "feasance", meaning: "행위 (faire=하다)",   origin: "French", color: "#9D4EDD" }
+        ],
+        mnemonic: "나쁜(mal) 방식으로 직무를 행하는(feasance) 것 → 직권남용",
+        situation: { en: "The mayor was investigated for malfeasance in office.", ko: "시장은 재직 중 직권남용으로 수사를 받았다." }
+      },
+      {
+        id: 88, word: "manslaughter", pronunciation: "/ˈmænslɔːtər/", korean: "과실치사, 고의 없는 살인",
+        etymology: [
+          { part: "man",       meaning: "사람",                  origin: "Old English", color: "#55EFC4" },
+          { part: "slaughter", meaning: "도살, 살해 (slagan)",    origin: "Old Norse",   color: "#00B894" }
+        ],
+        mnemonic: "사람(man)을 계획 없이 살해(slaughter)하는 것 → 과실치사",
+        situation: { en: "He was charged with involuntary manslaughter after the accident.", ko: "그는 사고 후 비자의적 과실치사죄로 기소되었다." }
+      },
+      {
+        id: 89, word: "mediate", pronunciation: "/ˈmiːdieɪt/", korean: "중재하다, 조정하다",
+        etymology: [
+          { part: "medi-",  meaning: "중간 (medius)",     origin: "Latin", color: "#74B9FF" },
+          { part: "-ate",   meaning: "동사화 접미사",     origin: "Latin", color: "#0984E3" }
+        ],
+        mnemonic: "중간(medius)에 서서 해결하다 → 중재하다",
+        situation: { en: "A neutral officer was brought in to mediate the dispute.", ko: "중립적인 경찰관이 분쟁을 중재하기 위해 투입되었다." }
+      },
+      {
+        id: 90, word: "mitigate", pronunciation: "/ˈmɪtɪɡeɪt/", korean: "완화하다, 경감하다",
+        etymology: [
+          { part: "mitis",   meaning: "부드러운, 온화한",  origin: "Latin", color: "#A8E6CF" },
+          { part: "-igate",  meaning: "만들다 (agere)",    origin: "Latin", color: "#7FDBDA" }
+        ],
+        mnemonic: "부드럽게(mitis) 만들다(agere) → 완화하다, 경감하다",
+        situation: { en: "His remorse was considered a mitigating factor in sentencing.", ko: "그의 후회는 양형에서 경감 요인으로 고려되었다." }
+      },
+      {
+        id: 91, word: "motive", pronunciation: "/ˈmoʊtɪv/", korean: "동기, 범행 동기",
+        etymology: [
+          { part: "motiv-", meaning: "움직이게 하는 (movere)", origin: "Latin", color: "#BADC58" },
+          { part: "-e",     meaning: "명사 접미사",             origin: "Latin", color: "#6AB04C" }
+        ],
+        mnemonic: "행동을 움직이게(movere) 하는 것 → 동기",
+        situation: { en: "Investigators struggled to establish a clear motive for the crime.", ko: "수사관들은 범행의 명확한 동기를 규명하는 데 어려움을 겪었다." }
+      },
+      {
+        id: 92, word: "municipal", pronunciation: "/mjuːˈnɪsɪpəl/", korean: "지방 자치의, 시의",
+        etymology: [
+          { part: "munici-", meaning: "의무를 지는 (munus+capere)", origin: "Latin", color: "#FF7675" },
+          { part: "-pal",    meaning: "관련된 (접미사)",             origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "시민의 의무(munus)를 수행하는(capere) 조직 → 지방자치의",
+        situation: { en: "Municipal police handle local law enforcement duties.", ko: "지방 경찰은 지역 법 집행 업무를 담당한다." }
+      },
+      {
+        id: 93, word: "patrol", pronunciation: "/pəˈtroʊl/", korean: "순찰하다; 순찰",
+        etymology: [
+          { part: "patrouiller", meaning: "웅덩이를 밟다, 순회하다", origin: "French", color: "#E17055" }
+        ],
+        mnemonic: "지역을 밟으며 돌아다니다(patrouiller) → 순찰하다",
+        situation: { en: "Officers patrol the neighborhood every two hours.", ko: "경찰관들은 2시간마다 동네를 순찰한다." }
+      },
+      {
+        id: 94, word: "penalize", pronunciation: "/ˈpiːnəlaɪz/", korean: "처벌하다, 불이익을 주다",
+        etymology: [
+          { part: "penal-", meaning: "처벌의, 형벌 (poena)", origin: "Latin", color: "#6C5CE7" },
+          { part: "-ize",   meaning: "동사화 접미사",         origin: "Greek", color: "#A29BFE" }
+        ],
+        mnemonic: "형벌(poena)을 적용하다(-ize) → 처벌하다",
+        situation: { en: "Repeat offenders are penalized more severely.", ko: "재범자는 더 가혹하게 처벌된다." }
+      },
+      {
+        id: 95, word: "petition", pronunciation: "/pɪˈtɪʃən/", korean: "청원, 탄원; 청원하다",
+        etymology: [
+          { part: "petit-", meaning: "구하다, 청하다 (petere)", origin: "Latin", color: "#FFEAA7" },
+          { part: "-ion",   meaning: "명사 접미사",              origin: "Latin", color: "#FDCB6E" }
+        ],
+        mnemonic: "공식적으로 구하는(petere) 것(-ion) → 청원",
+        situation: { en: "Residents filed a petition demanding more police presence.", ko: "주민들은 경찰 주재 강화를 요구하는 청원서를 제출했다." }
+      },
+      {
+        id: 96, word: "precedent", pronunciation: "/ˈpresɪdənt/", korean: "판례, 선례",
+        etymology: [
+          { part: "pre-",   meaning: "앞에, 먼저",          origin: "Latin", color: "#C77DFF" },
+          { part: "cedere", meaning: "가다, 나아가다",       origin: "Latin", color: "#9D4EDD" },
+          { part: "-ent",   meaning: "명사/형용사 접미사",   origin: "Latin", color: "#E0AAFF" }
+        ],
+        mnemonic: "앞서(pre) 나간(cedere) 것 → 앞선 판례",
+        situation: { en: "The ruling set a landmark precedent for future cases.", ko: "그 판결은 향후 사건들에 획기적인 판례를 세웠다." }
+      },
+      {
+        id: 97, word: "premeditate", pronunciation: "/priːˈmedɪteɪt/", korean: "사전에 계획하다",
+        etymology: [
+          { part: "pre-",    meaning: "미리, 사전에",     origin: "Latin", color: "#74B9FF" },
+          { part: "meditate", meaning: "숙고하다 (meditari)", origin: "Latin", color: "#0984E3" }
+        ],
+        mnemonic: "미리(pre) 숙고해(meditari) 두다 → 사전에 계획하다",
+        situation: { en: "The prosecution proved the attack was premeditated.", ko: "검찰은 공격이 사전에 계획된 것임을 입증했다." }
+      },
+      {
+        id: 98, word: "probation", pronunciation: "/prəˈbeɪʃən/", korean: "보호관찰, 집행유예",
+        etymology: [
+          { part: "probat-", meaning: "시험하다, 검증 (probare)", origin: "Latin", color: "#A8E6CF" },
+          { part: "-ion",    meaning: "명사 접미사",              origin: "Latin", color: "#00CEC9" }
+        ],
+        mnemonic: "행동을 시험·검증(probare)하는(-ion) 기간 → 보호관찰",
+        situation: { en: "She was sentenced to two years' probation for the offense.", ko: "그녀는 해당 범죄로 2년 보호관찰을 선고받았다." }
+      },
+      {
+        id: 99, word: "prohibit", pronunciation: "/prəˈhɪbɪt/", korean: "금지하다",
+        etymology: [
+          { part: "pro-",   meaning: "앞에서, 공개적으로",  origin: "Latin", color: "#FF9F43" },
+          { part: "hibit",  meaning: "잡다, 막다 (habere)", origin: "Latin", color: "#EE5A24" }
+        ],
+        mnemonic: "앞에서(pro) 공개적으로 막다(habere) → 금지하다",
+        situation: { en: "Federal law prohibits carrying weapons onto school premises.", ko: "연방법은 학교 구내에 무기 반입을 금지한다." }
+      },
+      {
+        id: 100, word: "prosecute", pronunciation: "/ˈprɒsɪkjuːt/", korean: "기소하다, 소추하다",
+        etymology: [
+          { part: "pro-",   meaning: "앞으로, 계속",       origin: "Latin", color: "#BADC58" },
+          { part: "sequi",  meaning: "따르다, 추구하다",    origin: "Latin", color: "#6AB04C" },
+          { part: "-ute",   meaning: "동사화 접미사",       origin: "Latin", color: "#C7ECEE" }
+        ],
+        mnemonic: "법을 앞세워(pro) 계속 추구하다(sequi) → 기소하다",
+        situation: { en: "The DA decided to prosecute the case to the fullest extent.", ko: "검사는 최대한 강하게 기소하기로 결정했다." }
+      },
+      {
+        id: 101, word: "provoke", pronunciation: "/prəˈvoʊk/", korean: "도발하다, 자극하다",
+        etymology: [
+          { part: "pro-",  meaning: "앞으로, 밖으로",    origin: "Latin", color: "#E17055" },
+          { part: "voc-",  meaning: "부르다 (vocare)",    origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "반응을 끌어내도록(vocare) 앞으로(pro) 밀어붙이다 → 도발하다",
+        situation: { en: "He claimed the officer provoked the confrontation.", ko: "그는 경찰관이 대치를 도발했다고 주장했다." }
+      },
+      {
+        id: 102, word: "punitive", pronunciation: "/ˈpjuːnɪtɪv/", korean: "징벌적인, 처벌을 목적으로 한",
+        etymology: [
+          { part: "punit-", meaning: "처벌하다 (punire)", origin: "Latin", color: "#6C5CE7" },
+          { part: "-ive",   meaning: "형용사 접미사",     origin: "Latin", color: "#A29BFE" }
+        ],
+        mnemonic: "처벌(punire)을 목적으로 하는(-ive) → 징벌적인",
+        situation: { en: "The judge awarded punitive damages to deter future violations.", ko: "판사는 미래의 위반을 억제하기 위해 징벌적 손해배상을 명했다." }
+      },
+      {
+        id: 103, word: "rehabilitate", pronunciation: "/ˌriːəˈbɪlɪteɪt/", korean: "재활시키다, 사회 복귀시키다",
+        etymology: [
+          { part: "re-",      meaning: "다시",               origin: "Latin", color: "#FFEAA7" },
+          { part: "habilis",  meaning: "적합한, 능력 있는",   origin: "Latin", color: "#FDCB6E" },
+          { part: "-ate",     meaning: "동사화 접미사",       origin: "Latin", color: "#F9CA24" }
+        ],
+        mnemonic: "다시(re) 능력 있는(habilis) 상태로 만들다 → 재활시키다",
+        situation: { en: "The prison program aims to rehabilitate offenders for reintegration.", ko: "교도소 프로그램은 범죄자들의 사회 복귀를 위한 재활을 목표로 한다." }
+      },
+      {
+        id: 104, word: "restitution", pronunciation: "/ˌrestɪˈtjuːʃən/", korean: "배상, 원상회복",
+        etymology: [
+          { part: "re-",     meaning: "다시, 돌려",          origin: "Latin", color: "#FF7675" },
+          { part: "statuere", meaning: "세우다, 회복하다",   origin: "Latin", color: "#D63031" },
+          { part: "-ion",    meaning: "명사 접미사",         origin: "Latin", color: "#FFA07A" }
+        ],
+        mnemonic: "원래 상태로 다시(re) 세우는(statuere) 것 → 원상회복, 배상",
+        situation: { en: "The court ordered full restitution to all victims.", ko: "법원은 모든 피해자에게 전액 배상을 명령했다." }
+      },
+      {
+        id: 105, word: "revoke", pronunciation: "/rɪˈvoʊk/", korean: "취소하다, 철회하다",
+        etymology: [
+          { part: "re-",   meaning: "뒤로, 다시",         origin: "Latin", color: "#C77DFF" },
+          { part: "voc-",  meaning: "부르다 (vocare)",     origin: "Latin", color: "#9D4EDD" }
+        ],
+        mnemonic: "다시(re) 불러(vocare) 되돌리다 → 취소하다",
+        situation: { en: "His driver's license was revoked following the DUI conviction.", ko: "음주운전 유죄 판결 후 그의 운전 면허가 취소되었다." }
+      },
+      {
+        id: 106, word: "robbery", pronunciation: "/ˈrɒbəri/", korean: "강도, 강도죄",
+        etymology: [
+          { part: "rob",  meaning: "빼앗다 (Germanic raub=전리품)", origin: "Germanic", color: "#55EFC4" },
+          { part: "-bery", meaning: "행위 명사 접미사",             origin: "French",   color: "#00B894" }
+        ],
+        mnemonic: "전리품(raub)처럼 폭력으로 빼앗는 행위 → 강도",
+        situation: { en: "Armed robbery carries a maximum sentence of twenty years.", ko: "무장 강도는 최대 20년의 형량이 부과된다." }
+      },
+      {
+        id: 107, word: "sequester", pronunciation: "/sɪˈkwestər/", korean: "격리하다, 압류하다",
+        etymology: [
+          { part: "sequester", meaning: "중재인, 보관인",   origin: "Latin", color: "#74B9FF" },
+          { part: "(seque-)",  meaning: "따로 떼어두다",    origin: "Latin", color: "#0984E3" }
+        ],
+        mnemonic: "중립적인 보관인(sequester)처럼 따로 떼어놓다 → 격리하다",
+        situation: { en: "The jury was sequestered to prevent outside influence.", ko: "외부의 영향을 막기 위해 배심원단이 격리되었다." }
+      },
+      {
+        id: 108, word: "smuggle", pronunciation: "/ˈsmʌɡəl/", korean: "밀수하다, 몰래 들여오다",
+        etymology: [
+          { part: "smuggeln", meaning: "몰래 운반하다",  origin: "Low German", color: "#A8E6CF" }
+        ],
+        mnemonic: "몰래(smuggeln) 국경을 넘어 운반하다 → 밀수하다",
+        situation: { en: "Customs intercepted a boat attempting to smuggle drugs.", ko: "세관이 마약을 밀수하려는 배를 차단했다." }
+      },
+      {
+        id: 109, word: "statute", pronunciation: "/ˈstætʃuːt/", korean: "법령, 성문법",
+        etymology: [
+          { part: "statut-", meaning: "세워진 것 (statuere=세우다)", origin: "Latin", color: "#FF9F43" },
+          { part: "-e",      meaning: "명사 접미사",                  origin: "Latin", color: "#FECA57" }
+        ],
+        mnemonic: "공식으로 세워진(statuere) 것 → 법령, 성문법",
+        situation: { en: "The statute of limitations had expired on the older charges.", ko: "과거 혐의의 공소시효가 만료되었다." }
+      },
+      {
+        id: 110, word: "summon", pronunciation: "/ˈsʌmən/", korean: "소환하다, 불러오다",
+        etymology: [
+          { part: "sub-",  meaning: "몰래, 아래에서",       origin: "Latin", color: "#C77DFF" },
+          { part: "monere", meaning: "알리다, 경고하다",    origin: "Latin", color: "#9D4EDD" }
+        ],
+        mnemonic: "공식적으로 아래에서(sub) 알리며(monere) 부르다 → 소환하다",
+        situation: { en: "The court summoned all parties to appear on Monday.", ko: "법원은 모든 당사자에게 월요일 출두를 명했다." }
+      },
+      {
+        id: 111, word: "surveillance", pronunciation: "/sɜːrˈveɪləns/", korean: "감시, 사찰",
+        etymology: [
+          { part: "sur-",    meaning: "위에서 (super)",       origin: "French", color: "#BADC58" },
+          { part: "veiller", meaning: "지켜보다 (vigilare)", origin: "French", color: "#6AB04C" },
+          { part: "-ance",   meaning: "명사 접미사",         origin: "Latin",  color: "#C7ECEE" }
+        ],
+        mnemonic: "위에서(super) 내려다보며 지켜보는(veiller) 것 → 감시",
+        situation: { en: "The suspect was placed under 24-hour surveillance.", ko: "용의자는 24시간 감시 하에 놓였다." }
+      },
+      {
+        id: 112, word: "testify", pronunciation: "/ˈtestɪfaɪ/", korean: "증언하다",
+        etymology: [
+          { part: "testis",  meaning: "증인",               origin: "Latin", color: "#FF7675" },
+          { part: "-fy",     meaning: "만들다 (facere)",     origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "증인(testis)으로서 말하다(-fy) → 증언하다",
+        situation: { en: "She agreed to testify against her former accomplice.", ko: "그녀는 전 공범에게 불리한 증언을 하기로 동의했다." }
+      },
+      {
+        id: 113, word: "treason", pronunciation: "/ˈtriːzən/", korean: "반역죄, 국가반란",
+        etymology: [
+          { part: "tradere", meaning: "넘겨주다, 배반하다",  origin: "Latin",  color: "#E17055" },
+          { part: "(traison)", meaning: "배신",              origin: "Old French", color: "#D63031" }
+        ],
+        mnemonic: "국가를 적에게 넘겨주는(tradere) 행위 → 반역죄",
+        situation: { en: "He was convicted of high treason for passing secrets to a foreign power.", ko: "그는 외국에 기밀을 넘겨준 혐의로 고급 반역죄 판결을 받았다." }
+      },
+      {
+        id: 114, word: "undercover", pronunciation: "/ˌʌndərˈkʌvər/", korean: "비밀리에 활동하는, 위장한",
+        etymology: [
+          { part: "under",  meaning: "아래에, 숨어서",     origin: "Old English", color: "#6C5CE7" },
+          { part: "cover",  meaning: "덮다, 숨기다",        origin: "Old French",  color: "#A29BFE" }
+        ],
+        mnemonic: "덮개(cover) 아래(under) 숨어 활동하다 → 비밀잠복",
+        situation: { en: "An undercover officer infiltrated the criminal network.", ko: "위장 경찰관이 범죄 조직에 잠입했다." }
+      },
+      {
+        id: 115, word: "vagrancy", pronunciation: "/ˈveɪɡrənsi/", korean: "부랑, 방랑죄",
+        etymology: [
+          { part: "vagr-",  meaning: "방랑하다 (vagari)",   origin: "Latin", color: "#FFEAA7" },
+          { part: "-ancy",  meaning: "상태 명사 접미사",     origin: "Latin", color: "#FDCB6E" }
+        ],
+        mnemonic: "정처 없이 방랑(vagari)하는 상태(-ancy) → 부랑",
+        situation: { en: "Vagrancy laws were used to criminalize homelessness.", ko: "부랑죄는 노숙을 범죄화하는 데 이용되었다." }
+      },
+      {
+        id: 116, word: "validate", pronunciation: "/ˈvælɪdeɪt/", korean: "유효화하다, 확인하다",
+        etymology: [
+          { part: "valid-", meaning: "강한, 유효한 (validus)", origin: "Latin", color: "#55EFC4" },
+          { part: "-ate",   meaning: "동사화 접미사",           origin: "Latin", color: "#00B894" }
+        ],
+        mnemonic: "강하고(validus) 유효하게 만들다 → 유효화하다",
+        situation: { en: "The court validated the search warrant at the hearing.", ko: "법원은 청문회에서 수색 영장을 유효하다고 확인했다." }
+      },
+      {
+        id: 117, word: "vengeance", pronunciation: "/ˈvendʒəns/", korean: "복수, 보복",
+        etymology: [
+          { part: "ven-",    meaning: "갚다 (vindicare)",     origin: "Latin",  color: "#FF6B6B" },
+          { part: "-geance", meaning: "행위 명사 접미사",      origin: "French", color: "#EE5A24" }
+        ],
+        mnemonic: "해를 갚으려(vindicare) 하는 행위 → 복수",
+        situation: { en: "The detective warned that acts of vengeance would only escalate the conflict.", ko: "형사는 복수 행위가 갈등을 악화시킬 뿐이라고 경고했다." }
+      },
+      {
+        id: 118, word: "verify", pronunciation: "/ˈverɪfaɪ/", korean: "확인하다, 증명하다",
+        etymology: [
+          { part: "veri-",  meaning: "진실 (verus)",     origin: "Latin", color: "#74B9FF" },
+          { part: "-fy",    meaning: "만들다 (facere)",    origin: "Latin", color: "#0984E3" }
+        ],
+        mnemonic: "진실(verus)로 만들다(-fy) → 확인하다, 증명하다",
+        situation: { en: "Officers verified the suspect's identity before proceeding.", ko: "경찰관들은 절차를 진행하기 전에 용의자의 신원을 확인했다." }
+      },
+      {
+        id: 119, word: "vindicate", pronunciation: "/ˈvɪndɪkeɪt/", korean: "무죄를 입증하다, 정당화하다",
+        etymology: [
+          { part: "vind-",  meaning: "주장하다, 지키다",   origin: "Latin", color: "#A8E6CF" },
+          { part: "icere",  meaning: "권리를 되찾다",      origin: "Latin", color: "#7FDBDA" },
+          { part: "-ate",   meaning: "동사화 접미사",      origin: "Latin", color: "#B5EAD7" }
+        ],
+        mnemonic: "자신의 권리(vind)를 되찾아(icere) 입증하다 → 무죄를 입증하다",
+        situation: { en: "The new evidence vindicated the convicted man after fifteen years.", ko: "새로운 증거는 15년 만에 유죄 판결 남성의 무죄를 입증했다." }
+      },
+      {
+        id: 120, word: "volatile", pronunciation: "/ˈvɒlətaɪl/", korean: "불안정한, 폭발하기 쉬운",
+        etymology: [
+          { part: "volat-", meaning: "날다, 빠르게 변하다 (volare)", origin: "Latin", color: "#C77DFF" },
+          { part: "-ile",   meaning: "경향이 있는 형용사",           origin: "Latin", color: "#9D4EDD" }
+        ],
+        mnemonic: "날아가듯(volare) 빠르게 변하는(-ile) → 불안정한",
+        situation: { en: "The situation became volatile when protesters clashed with police.", ko: "시위대가 경찰과 충돌하면서 상황이 불안정해졌다." }
+      },
+      {
+        id: 121, word: "vulnerable", pronunciation: "/ˈvʌlnərəbəl/", korean: "취약한, 상처받기 쉬운",
+        etymology: [
+          { part: "vulner-", meaning: "상처 (vulnus)",      origin: "Latin", color: "#FF9F43" },
+          { part: "-able",   meaning: "~할 수 있는",         origin: "Latin", color: "#FECA57" }
+        ],
+        mnemonic: "상처(vulnus)받을 수(-able) 있는 → 취약한",
+        situation: { en: "Police prioritized protecting vulnerable members of the community.", ko: "경찰은 지역 사회의 취약 계층 보호를 우선시했다." }
+      },
+      {
+        id: 122, word: "aggravate", pronunciation: "/ˈæɡrəveɪt/", korean: "악화시키다, 가중하다",
+        etymology: [
+          { part: "ag- (ad-)", meaning: "~에, 더하여",        origin: "Latin", color: "#BADC58" },
+          { part: "gravis",    meaning: "무거운, 심각한",      origin: "Latin", color: "#6AB04C" },
+          { part: "-ate",      meaning: "동사화 접미사",       origin: "Latin", color: "#C7ECEE" }
+        ],
+        mnemonic: "무거움(gravis)을 더하다(ad) → 악화시키다, 가중하다",
+        situation: { en: "The use of a weapon aggravated the assault charge.", ko: "무기 사용이 폭행 혐의를 가중시켰다." }
+      },
+      {
+        id: 123, word: "allege", pronunciation: "/əˈledʒ/", korean: "주장하다, 혐의를 제기하다",
+        etymology: [
+          { part: "al- (ad-)", meaning: "향하여",              origin: "Latin",      color: "#FF7675" },
+          { part: "legare",    meaning: "보내다, 위임하다",     origin: "Latin",      color: "#D63031" }
+        ],
+        mnemonic: "공식적으로 향해(ad) 보내진(legare) 주장 → 혐의를 제기하다",
+        situation: { en: "He was alleged to have taken part in the conspiracy.", ko: "그는 음모에 가담한 혐의를 받았다." }
+      },
+      {
+        id: 124, word: "amnesty", pronunciation: "/ˈæmnəsti/", korean: "사면, 특사",
+        etymology: [
+          { part: "amnest-", meaning: "잊음, 망각 (amnestia)", origin: "Greek", color: "#E17055" },
+          { part: "-y",      meaning: "명사 접미사",            origin: "Greek", color: "#D63031" }
+        ],
+        mnemonic: "죄를 잊어주는(amnestia) 것 → 사면",
+        situation: { en: "The government declared a general amnesty for minor offenses.", ko: "정부는 경범죄에 대해 일반 사면을 선언했다." }
+      },
+      {
+        id: 125, word: "anonymous", pronunciation: "/əˈnɒnɪməs/", korean: "익명의, 신원 불명의",
+        etymology: [
+          { part: "an-",   meaning: "없는, 부정",           origin: "Greek", color: "#6C5CE7" },
+          { part: "onoma", meaning: "이름",                  origin: "Greek", color: "#A29BFE" },
+          { part: "-ous",  meaning: "형용사 접미사",         origin: "Greek", color: "#DFE6E9" }
+        ],
+        mnemonic: "이름(onoma)이 없는(an) 상태 → 익명의",
+        situation: { en: "An anonymous tip led police to the hidden hideout.", ko: "익명의 제보가 경찰을 숨겨진 은신처로 이끌었다." }
+      },
+      {
+        id: 126, word: "appease", pronunciation: "/əˈpiːz/", korean: "달래다, 무마하다",
+        etymology: [
+          { part: "ap- (ad-)", meaning: "향하여",              origin: "Latin",      color: "#FFEAA7" },
+          { part: "pais",      meaning: "평화 (pax)",           origin: "Old French", color: "#FDCB6E" }
+        ],
+        mnemonic: "평화(pax)로 향하게(ad) 만들다 → 달래다",
+        situation: { en: "Officials tried to appease angry protesters without arrests.", ko: "당국은 체포 없이 분노한 시위대를 달래려 했다." }
+      },
+      {
+        id: 127, word: "arson", pronunciation: "/ˈɑːrsən/", korean: "방화, 방화죄",
+        etymology: [
+          { part: "ars-",  meaning: "불 지르다 (ardere)", origin: "Latin",      color: "#FF7675" },
+          { part: "-on",   meaning: "명사 접미사",         origin: "Old French", color: "#D63031" }
+        ],
+        mnemonic: "의도적으로 불을 지르는(ardere) 행위 → 방화",
+        situation: { en: "The building fire was ruled arson after investigators found accelerants.", ko: "수사관이 가속제를 발견하면서 건물 화재는 방화로 판정되었다." }
+      },
+      {
+        id: 128, word: "atrocity", pronunciation: "/əˈtrɒsɪti/", korean: "잔학 행위, 극악무도한 일",
+        etymology: [
+          { part: "atrox",  meaning: "잔인한, 끔찍한",    origin: "Latin", color: "#C77DFF" },
+          { part: "-ity",   meaning: "명사 접미사",        origin: "Latin", color: "#9D4EDD" }
+        ],
+        mnemonic: "끔찍하게(atrox) 잔인한 일(-ity) → 잔학 행위",
+        situation: { en: "The tribunal was established to address wartime atrocities.", ko: "재판소는 전시 잔학 행위를 다루기 위해 설립되었다." }
+      },
+      {
+        id: 129, word: "covert", pronunciation: "/ˈkoʊvɜːrt/", korean: "비밀의, 은밀한",
+        etymology: [
+          { part: "covert", meaning: "덮인, 숨겨진 (covrir=덮다)", origin: "Old French", color: "#55EFC4" }
+        ],
+        mnemonic: "덮어(covrir) 숨긴 → 비밀의, 은밀한",
+        situation: { en: "A covert operation was launched to dismantle the cartel.", ko: "카르텔을 해체하기 위한 비밀 작전이 개시되었다." }
+      },
+      {
+        id: 130, word: "culpable", pronunciation: "/ˈkʌlpəbəl/", korean: "유죄의, 책임이 있는",
+        etymology: [
+          { part: "culp-",  meaning: "잘못, 죄 (culpa)",   origin: "Latin", color: "#74B9FF" },
+          { part: "-able",  meaning: "~할 수 있는",         origin: "Latin", color: "#0984E3" }
+        ],
+        mnemonic: "죄(culpa)를 물을(-able) 수 있는 → 유죄의",
+        situation: { en: "Both parties were found culpable for the incident.", ko: "양측 모두 사건에 책임이 있는 것으로 판명되었다." }
+      },
+      {
+        id: 131, word: "defiant", pronunciation: "/dɪˈfaɪənt/", korean: "반항적인, 도전적인",
+        etymology: [
+          { part: "de-",   meaning: "완전히, 아래로",      origin: "Latin",  color: "#A8E6CF" },
+          { part: "fier",  meaning: "믿다, 신뢰하다 (fidere)", origin: "French", color: "#7FDBDA" },
+          { part: "-ant",  meaning: "형용사 접미사",       origin: "Latin",  color: "#B5EAD7" }
+        ],
+        mnemonic: "신뢰(fidere)를 완전히(de) 거부하는 태도 → 반항적인",
+        situation: { en: "The defiant suspect refused to answer any questions.", ko: "반항적인 용의자는 어떤 질문에도 답하길 거부했다." }
+      },
+      {
+        id: 132, word: "disclose", pronunciation: "/dɪsˈkloʊz/", korean: "공개하다, 밝히다",
+        etymology: [
+          { part: "dis-",   meaning: "반대로, 떼어",        origin: "Latin", color: "#FF9F43" },
+          { part: "close",  meaning: "닫다 (claudere)",     origin: "Latin", color: "#EE5A24" }
+        ],
+        mnemonic: "닫힌(claudere) 것을 반대로(dis) 열다 → 공개하다",
+        situation: { en: "Officers are required to disclose conflicts of interest.", ko: "경찰관은 이해충돌을 공개해야 한다." }
+      },
+      {
+        id: 133, word: "disperse", pronunciation: "/dɪˈspɜːrs/", korean: "해산시키다, 흩어지게 하다",
+        etymology: [
+          { part: "di- (dis-)", meaning: "사방으로",          origin: "Latin", color: "#BADC58" },
+          { part: "sperse",     meaning: "뿌리다 (spargere)", origin: "Latin", color: "#6AB04C" }
+        ],
+        mnemonic: "사방으로(dis) 씨앗처럼 뿌리다(spargere) → 해산시키다",
+        situation: { en: "Police used tear gas to disperse the crowd.", ko: "경찰은 군중을 해산시키기 위해 최루탄을 사용했다." }
+      },
+      {
+        id: 134, word: "enforce", pronunciation: "/ɪnˈfɔːrs/", korean: "집행하다, 강제하다",
+        etymology: [
+          { part: "en-",   meaning: "안에, ~하게",          origin: "Latin",  color: "#FF7675" },
+          { part: "force", meaning: "힘, 강제 (fortis)",     origin: "French", color: "#D63031" }
+        ],
+        mnemonic: "힘(force)을 가하여 실행하게(en) 하다 → 집행하다",
+        situation: { en: "It is the duty of police to enforce the law impartially.", ko: "법을 공평하게 집행하는 것이 경찰의 의무이다." }
+      },
+      {
+        id: 135, word: "entrap", pronunciation: "/ɪnˈtræp/", korean: "함정에 빠뜨리다",
+        etymology: [
+          { part: "en-",  meaning: "안으로",          origin: "French", color: "#E17055" },
+          { part: "trap", meaning: "덫, 함정",         origin: "Old English", color: "#D63031" }
+        ],
+        mnemonic: "덫(trap) 안으로(en) 빠뜨리다 → 함정에 빠뜨리다",
+        situation: { en: "The defense claimed police had entrapped their client.", ko: "변호인은 경찰이 의뢰인을 함정에 빠뜨렸다고 주장했다." }
+      },
+      {
+        id: 136, word: "execute", pronunciation: "/ˈeksɪkjuːt/", korean: "사형을 집행하다; 실행하다",
+        etymology: [
+          { part: "ex-",   meaning: "밖으로, 완전히",    origin: "Latin", color: "#6C5CE7" },
+          { part: "sequi", meaning: "따르다, 이행하다",   origin: "Latin", color: "#A29BFE" },
+          { part: "-ute",  meaning: "동사화 접미사",      origin: "Latin", color: "#DFE6E9" }
+        ],
+        mnemonic: "끝까지(ex) 이행하다(sequi) → 집행하다, 사형을 집행하다",
+        situation: { en: "The sentence was executed after all appeals were exhausted.", ko: "모든 항소가 기각된 후 형이 집행되었다." }
+      },
+      {
+        id: 137, word: "extenuate", pronunciation: "/ɪkˈstenjueɪt/", korean: "정상을 참작하다, 경감하다",
+        etymology: [
+          { part: "ex-",    meaning: "밖으로",              origin: "Latin", color: "#FFEAA7" },
+          { part: "tenuis", meaning: "가는, 약한",           origin: "Latin", color: "#FDCB6E" },
+          { part: "-ate",   meaning: "동사화 접미사",        origin: "Latin", color: "#F9CA24" }
+        ],
+        mnemonic: "죄의 무게를 가늘게(tenuis) 해 밖으로(ex) 빼다 → 정상 참작하다",
+        situation: { en: "His youth was an extenuating circumstance in the sentencing.", ko: "그의 어린 나이가 양형에서 정상 참작 요소였다." }
+      },
+      {
+        id: 138, word: "flagrant", pronunciation: "/ˈfleɪɡrənt/", korean: "노골적인, 명백한",
+        etymology: [
+          { part: "flagr-",  meaning: "불타다, 타오르다 (flagrare)", origin: "Latin", color: "#FF7675" },
+          { part: "-ant",    meaning: "형용사 접미사",               origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "불처럼(flagrare) 빤히 타오르듯 눈에 띄는 → 노골적인",
+        situation: { en: "It was a flagrant violation of the suspect's constitutional rights.", ko: "그것은 용의자의 헌법적 권리에 대한 노골적인 침해였다." }
+      },
+      {
+        id: 139, word: "forensic", pronunciation: "/fəˈrenzɪk/", korean: "법의학의, 법정의",
+        etymology: [
+          { part: "forum",  meaning: "광장, 법정",           origin: "Latin", color: "#C77DFF" },
+          { part: "-ensis", meaning: "~에 속한, 관련된",     origin: "Latin", color: "#9D4EDD" },
+          { part: "-ic",    meaning: "형용사 접미사",        origin: "Latin", color: "#E0AAFF" }
+        ],
+        mnemonic: "법정(forum)에서 사용되는 과학 → 법의학의",
+        situation: { en: "Forensic analysis of the scene provided crucial evidence.", ko: "현장의 법의학 분석이 결정적 증거를 제공했다." }
+      },
+      {
+        id: 140, word: "infringe", pronunciation: "/ɪnˈfrɪndʒ/", korean: "침해하다, 위반하다",
+        etymology: [
+          { part: "in-",     meaning: "안으로, 위반하여",    origin: "Latin", color: "#55EFC4" },
+          { part: "frangere", meaning: "부수다, 꺾다",       origin: "Latin", color: "#00B894" }
+        ],
+        mnemonic: "권리를 안에서(in) 부수어(frangere) 꺾다 → 침해하다",
+        situation: { en: "The search infringe upon the citizens' right to privacy.", ko: "수색은 시민의 사생활 침해 우려가 있었다." }
+      },
+      {
+        id: 141, word: "intercept", pronunciation: "/ˌɪntərˈsept/", korean: "가로채다, 차단하다",
+        etymology: [
+          { part: "inter-", meaning: "사이에",              origin: "Latin", color: "#74B9FF" },
+          { part: "cept",   meaning: "잡다 (capere)",        origin: "Latin", color: "#0984E3" }
+        ],
+        mnemonic: "사이(inter)에서 잡다(capere) → 가로채다",
+        situation: { en: "Police intercepted a call that revealed the planned robbery.", ko: "경찰은 계획된 강도를 밝히는 통화를 가로챘다." }
+      },
+      {
+        id: 142, word: "invoke", pronunciation: "/ɪnˈvoʊk/", korean: "발동하다, 원용하다",
+        etymology: [
+          { part: "in-",   meaning: "향하여, 위로",        origin: "Latin", color: "#A8E6CF" },
+          { part: "voc-",  meaning: "부르다 (vocare)",      origin: "Latin", color: "#7FDBDA" }
+        ],
+        mnemonic: "권한을 향해(in) 불러오다(vocare) → 발동하다",
+        situation: { en: "The suspect invoked his right to remain silent.", ko: "용의자는 묵비권을 행사했다." }
+      },
+      {
+        id: 143, word: "misappropriate", pronunciation: "/ˌmɪsəˈproʊprieɪt/", korean: "유용하다, 횡령하다",
+        etymology: [
+          { part: "mis-",       meaning: "잘못된",                    origin: "Old French", color: "#FF9F43" },
+          { part: "appropriare", meaning: "자기 것으로 삼다 (proprius)", origin: "Latin",      color: "#EE5A24" }
+        ],
+        mnemonic: "잘못된(mis) 방식으로 자기 것으로 삼다(proprius) → 유용하다",
+        situation: { en: "The official misappropriated public funds for personal use.", ko: "그 공무원은 공금을 개인 용도로 유용했다." }
+      },
+      {
+        id: 144, word: "nullify", pronunciation: "/ˈnʌlɪfaɪ/", korean: "무효화하다",
+        etymology: [
+          { part: "null-", meaning: "아무것도 없는 (nullus)", origin: "Latin", color: "#BADC58" },
+          { part: "-ify",  meaning: "만들다 (facere)",        origin: "Latin", color: "#6AB04C" }
+        ],
+        mnemonic: "아무것도 없는(nullus) 것으로 만들다(-ify) → 무효화하다",
+        situation: { en: "The judge nullified the confession obtained without a lawyer.", ko: "판사는 변호인 없이 얻어낸 자백을 무효화했다." }
+      },
+      {
+        id: 145, word: "offender", pronunciation: "/əˈfendər/", korean: "위반자, 범죄자",
+        etymology: [
+          { part: "offend",  meaning: "치다, 맞서다 (ob+fendere)", origin: "Latin", color: "#FF7675" },
+          { part: "-er",     meaning: "행위자 명사 접미사",         origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "규범에 맞서(offend) 행동하는 사람(-er) → 위반자",
+        situation: { en: "First-time offenders may be eligible for a diversion program.", ko: "초범자는 전환 프로그램의 자격이 될 수 있다." }
+      },
+      {
+        id: 146, word: "override", pronunciation: "/ˌoʊvərˈraɪd/", korean: "무효화하다, 기각하다",
+        etymology: [
+          { part: "over-",  meaning: "위에서, 넘어서",      origin: "Old English", color: "#E17055" },
+          { part: "ride",   meaning: "타고 지나가다",        origin: "Old English", color: "#D63031" }
+        ],
+        mnemonic: "위에서(over) 타고 지나가며(ride) 짓밟다 → 무효화하다",
+        situation: { en: "The Supreme Court overrode the lower court's ruling.", ko: "대법원이 하급 법원의 판결을 기각했다." }
+      },
+      {
+        id: 147, word: "penal", pronunciation: "/ˈpiːnəl/", korean: "형벌의, 형사상의",
+        etymology: [
+          { part: "penal-", meaning: "처벌 (poena)",   origin: "Latin", color: "#6C5CE7" },
+          { part: "-al",    meaning: "형용사 접미사",   origin: "Latin", color: "#A29BFE" }
+        ],
+        mnemonic: "처벌(poena)에 관한(-al) → 형벌의",
+        situation: { en: "The penal code was revised to address cybercrime.", ko: "형법이 사이버 범죄를 다루기 위해 개정되었다." }
+      },
+      {
+        id: 148, word: "plaintiff", pronunciation: "/ˈpleɪntɪf/", korean: "원고, 고소인",
+        etymology: [
+          { part: "plainte", meaning: "불평, 고소 (plaindre=한탄하다)", origin: "Old French", color: "#FFEAA7" },
+          { part: "-iff",    meaning: "사람 명사 접미사",               origin: "Old French", color: "#FDCB6E" }
+        ],
+        mnemonic: "법원에 불평(plainte)을 제기하는 사람(-iff) → 원고",
+        situation: { en: "The plaintiff alleged damages exceeding two million dollars.", ko: "원고는 200만 달러 이상의 손해를 주장했다." }
+      },
+      {
+        id: 149, word: "preclude", pronunciation: "/prɪˈkluːd/", korean: "배제하다, 막다",
+        etymology: [
+          { part: "pre-",   meaning: "미리, 앞에서",        origin: "Latin", color: "#C77DFF" },
+          { part: "clude",  meaning: "닫다 (claudere)",     origin: "Latin", color: "#9D4EDD" }
+        ],
+        mnemonic: "미리(pre) 닫아(claudere) 버리다 → 배제하다, 막다",
+        situation: { en: "His prior conviction precluded him from owning firearms.", ko: "그의 전과 기록으로 인해 총기 소지가 금지되었다." }
+      },
+      {
+        id: 150, word: "procure", pronunciation: "/prəˈkjʊər/", korean: "획득하다, 조달하다",
+        etymology: [
+          { part: "pro-",  meaning: "위하여, 앞에서",      origin: "Latin", color: "#55EFC4" },
+          { part: "curare", meaning: "돌보다, 구하다",     origin: "Latin", color: "#00B894" }
+        ],
+        mnemonic: "필요를 위하여(pro) 구해오다(curare) → 획득하다",
+        situation: { en: "Officers procured a warrant before conducting the search.", ko: "경찰관들은 수색을 실시하기 전에 영장을 받았다." }
+      },
+      {
+        id: 151, word: "profiling", pronunciation: "/ˈproʊfaɪlɪŋ/", korean: "프로파일링, 범죄자 특성 분석",
+        etymology: [
+          { part: "profile",  meaning: "윤곽, 측면도 (pro+filum=앞쪽 선)", origin: "Italian", color: "#74B9FF" },
+          { part: "-ing",     meaning: "동명사 접미사",                      origin: "English", color: "#0984E3" }
+        ],
+        mnemonic: "범죄자의 윤곽(profile)을 그리는 행위(-ing) → 프로파일링",
+        situation: { en: "Criminal profiling helped narrow down the list of suspects.", ko: "범죄자 프로파일링이 용의자 목록을 좁히는 데 도움이 되었다." }
+      },
+      {
+        id: 152, word: "pursue", pronunciation: "/pərˈsjuː/", korean: "추적하다, 추구하다",
+        etymology: [
+          { part: "pur- (pro-)", meaning: "앞으로",          origin: "Latin",  color: "#A8E6CF" },
+          { part: "suivre",      meaning: "따르다 (sequi)",   origin: "French", color: "#7FDBDA" }
+        ],
+        mnemonic: "앞으로(pro) 계속 따라가다(sequi) → 추적하다",
+        situation: { en: "Detectives pursued the case for seven years before an arrest.", ko: "형사들은 7년 동안 사건을 추적한 끝에 체포에 성공했다." }
+      },
+      {
+        id: 153, word: "recant", pronunciation: "/rɪˈkænt/", korean: "진술을 철회하다, 취소하다",
+        etymology: [
+          { part: "re-",   meaning: "다시, 뒤로",          origin: "Latin", color: "#FF9F43" },
+          { part: "cant",  meaning: "노래하다, 말하다 (cantare)", origin: "Latin", color: "#EE5A24" }
+        ],
+        mnemonic: "한 번 말한(cantare) 것을 다시(re) 되돌리다 → 철회하다",
+        situation: { en: "The witness recanted his testimony, claiming he had lied under pressure.", ko: "목격자는 압박 때문에 거짓말했다며 증언을 철회했다." }
+      },
+      {
+        id: 154, word: "redress", pronunciation: "/rɪˈdres/", korean: "구제하다, 시정하다; 시정",
+        etymology: [
+          { part: "re-",    meaning: "다시, 바로",          origin: "Latin",  color: "#BADC58" },
+          { part: "dress",  meaning: "바로잡다 (dresser)",   origin: "French", color: "#6AB04C" }
+        ],
+        mnemonic: "다시(re) 바르게 잡다(dresser) → 구제하다, 시정하다",
+        situation: { en: "Victims sought legal redress for damages suffered.", ko: "피해자들은 입은 손해에 대한 법적 구제를 요청했다." }
+      },
+      {
+        id: 155, word: "restrain", pronunciation: "/rɪˈstreɪn/", korean: "제지하다, 구속하다",
+        etymology: [
+          { part: "re-",     meaning: "뒤로, 강하게",       origin: "Latin", color: "#FF7675" },
+          { part: "stringere", meaning: "묶다, 조이다",     origin: "Latin", color: "#D63031" }
+        ],
+        mnemonic: "뒤로(re) 단단히 묶다(stringere) → 제지하다",
+        situation: { en: "Officers were required to restrain the violent detainee.", ko: "경찰관들은 폭력적인 피억류자를 제지해야 했다." }
+      },
+      {
+        id: 156, word: "retaliate", pronunciation: "/rɪˈtælieɪt/", korean: "보복하다, 앙갚음하다",
+        etymology: [
+          { part: "re-",    meaning: "다시, 되돌려",          origin: "Latin", color: "#E17055" },
+          { part: "talis",  meaning: "같은 종류의",           origin: "Latin", color: "#D63031" },
+          { part: "-ate",   meaning: "동사화 접미사",         origin: "Latin", color: "#FAB1A0" }
+        ],
+        mnemonic: "같은(talis) 방식으로 되돌려(re) 주다 → 보복하다",
+        situation: { en: "Gang members retaliated with a drive-by shooting.", ko: "갱단원들은 차량 총격으로 보복했다." }
+      },
+      {
+        id: 157, word: "subversive", pronunciation: "/səbˈvɜːrsɪv/", korean: "전복적인, 체제 파괴적인",
+        etymology: [
+          { part: "sub-",   meaning: "아래에서",              origin: "Latin", color: "#6C5CE7" },
+          { part: "vert",   meaning: "돌리다, 뒤집다 (vertere)", origin: "Latin", color: "#A29BFE" },
+          { part: "-ive",   meaning: "형용사 접미사",         origin: "Latin", color: "#DFE6E9" }
+        ],
+        mnemonic: "아래에서(sub) 뒤집으려(vertere) 하는 → 전복적인",
+        situation: { en: "The group was monitored for alleged subversive activities.", ko: "그 단체는 전복적인 활동 혐의로 감시를 받았다." }
+      },
+      {
+        id: 158, word: "complicit", pronunciation: "/kəmˈplɪsɪt/", korean: "공모에 가담한, 연루된",
+        etymology: [
+          { part: "com-",   meaning: "함께",                  origin: "Latin", color: "#FFEAA7" },
+          { part: "plicare", meaning: "접다, 얽히다",          origin: "Latin", color: "#FDCB6E" },
+          { part: "-it",    meaning: "형용사 접미사",          origin: "Latin", color: "#F9CA24" }
+        ],
+        mnemonic: "함께(com) 얽혀(plicare) 있는 → 공모에 가담한",
+        situation: { en: "Several officials were found complicit in the cover-up.", ko: "여러 공무원이 은폐에 가담한 것으로 밝혀졌다." }
+      },
+      {
+        id: 159, word: "exculpate", pronunciation: "/ˈekskʌlpeɪt/", korean: "무죄를 입증하다, 면책하다",
+        etymology: [
+          { part: "ex-",   meaning: "밖으로, 제거",         origin: "Latin", color: "#C77DFF" },
+          { part: "culpa", meaning: "죄, 과실",              origin: "Latin", color: "#9D4EDD" },
+          { part: "-ate",  meaning: "동사화 접미사",         origin: "Latin", color: "#E0AAFF" }
+        ],
+        mnemonic: "죄(culpa)를 밖으로(ex) 꺼내 없애다 → 무죄를 입증하다",
+        situation: { en: "The alibi evidence exculpated the defendant entirely.", ko: "알리바이 증거가 피고를 완전히 면책시켰다." }
+      },
+      {
+        id: 160, word: "perpetuate", pronunciation: "/pərˈpetʃueɪt/", korean: "영속시키다, 계속하게 하다",
+        etymology: [
+          { part: "per-",    meaning: "완전히, 끝까지",      origin: "Latin", color: "#FF9F43" },
+          { part: "petere",  meaning: "추구하다",             origin: "Latin", color: "#EE5A24" },
+          { part: "-ate",    meaning: "동사화 접미사",        origin: "Latin", color: "#FECA57" }
+        ],
+        mnemonic: "끝까지(per) 추구하며(petere) 계속되게 하다 → 영속시키다",
+        situation: { en: "Weak penalties perpetuate a cycle of crime in the community.", ko: "낮은 처벌 수위는 지역 사회의 범죄 악순환을 영속시킨다." }
+      },
+      {
+        id: 161, word: "incarcerate", pronunciation: "/ɪnˈkɑːrsəreɪt/", korean: "투옥하다, 구금하다",
+        etymology: [
+          { part: "in-",    meaning: "안으로",                origin: "Latin", color: "#55EFC4" },
+          { part: "career", meaning: "감옥, 울타리 (carcer)", origin: "Latin", color: "#00B894" },
+          { part: "-ate",   meaning: "동사화 접미사",          origin: "Latin", color: "#B5EAD7" }
+        ],
+        mnemonic: "감옥(carcer) 안으로(in) 집어넣다 → 투옥하다",
+        situation: { en: "He was incarcerated for ten years for armed robbery.", ko: "그는 무장 강도죄로 10년 동안 투옥되었다." }
+      },
+      {
+        id: 162, word: "adjudicate", pronunciation: "/əˈdʒuːdɪkeɪt/", korean: "판결을 내리다, 심판하다",
+        etymology: [
+          { part: "ad-",    meaning: "향하여",               origin: "Latin", color: "#74B9FF" },
+          { part: "judic-", meaning: "판사, 판단 (judex)",    origin: "Latin", color: "#0984E3" },
+          { part: "-ate",   meaning: "동사화 접미사",         origin: "Latin", color: "#A29BFE" }
+        ],
+        mnemonic: "판사(judex)로서 판단을 향해(ad) 내리다 → 판결을 내리다",
+        situation: { en: "The panel was convened to adjudicate the disciplinary matter.", ko: "징계 사안을 심판하기 위해 위원회가 소집되었다." }
+      }
+    ];
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  EtymologyNode — 개별 어원 파트 (SVG 원 + 텍스트)
+    // ─────────────────────────────────────────────────────────────────────────
+    const EtymologyNode = ({ data, index }) => {
+      const groupRef  = useRef(null);
+      const circleRef = useRef(null);
+      const textRef   = useRef(null);
+
+      const R            = 46;
+      const CIRCUMFERENCE = 2 * Math.PI * R; // ≈ 289
+
+      useEffect(() => {
+        // 초기 상태 고정
+        gsap.set(groupRef.current,  { opacity: 0, y: 22 });
+        gsap.set(circleRef.current, { strokeDashoffset: CIRCUMFERENCE });
+
+        const tl = gsap.timeline({ delay: index * 0.30 });
+
+        // 1. 노드 페이드인
+        tl.to(groupRef.current, {
+          opacity: 1, y: 0, duration: 0.4, ease: "power3.out"
+        })
+        // 2. 원 그리기 (strokeDashoffset 0 → 그려짐)
+        .to(circleRef.current, {
+          strokeDashoffset: 0, duration: 1.0, ease: "power2.inOut"
+        }, "-=0.15")
+        // 3. 텍스트 등장
+        .from(textRef.current.querySelectorAll(".t"), {
+          opacity: 0, y: 7,
+          stagger: 0.1,
+          duration: 0.35,
+          ease: "power2.out"
+        }, "-=0.5");
+
+        return () => tl.kill();
+      }, []);
+
+      return (
+        <div ref={groupRef} className="etym-node" style={{ opacity: 0 }}>
+          <svg width="104" height="104" viewBox="0 0 104 104">
+            {/* 배경 링 */}
+            <circle cx="52" cy="52" r={R}
+              fill="rgba(255,255,255,0.03)"
+              stroke="rgba(255,255,255,0.07)"
+              strokeWidth="1"
+            />
+            {/* GSAP 로 그려지는 컬러 링 */}
+            <circle
+              ref={circleRef}
+              cx="52" cy="52" r={R}
+              fill="none"
+              stroke={data.color}
+              strokeWidth="2.8"
+              strokeLinecap="round"
+              strokeDasharray={CIRCUMFERENCE}
+              strokeDashoffset={CIRCUMFERENCE}
+              style={{ transform: "rotate(-90deg)", transformOrigin: "52px 52px" }}
+            />
+            {/* 어원 파트 레이블 */}
+            <text x="52" y="47" textAnchor="middle"
+              fill={data.color}
+              fontSize="12" fontWeight="700"
+              fontFamily="'Courier New', monospace">
+              {data.part}
+            </text>
+            {/* 언어 출처 */}
+            <text x="52" y="63" textAnchor="middle"
+              fill="rgba(255,255,255,0.28)"
+              fontSize="10" fontFamily="sans-serif">
+              {data.origin}
+            </text>
+          </svg>
+          <div ref={textRef} className="etym-meaning">
+            <span className="t meaning-text">{data.meaning}</span>
+          </div>
+        </div>
+      );
+    };
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  WordDisplay — 단어 전체 카드
+    // ─────────────────────────────────────────────────────────────────────────
+    const WordDisplay = ({ wordData }) => {
+      const wordRef      = useRef(null);
+      const mnemonicRef  = useRef(null);
+      const situationRef = useRef(null);
+
+      // 어원 원이 다 그려진 뒤 연상법·예문이 등장하도록 딜레이 계산
+      const afterEtymDelay = wordData.etymology.length * 0.30 + 0.95;
+
+      useEffect(() => {
+        gsap.set([wordRef.current, mnemonicRef.current, situationRef.current], {
+          opacity: 0, y: 16
+        });
+
+        const tl = gsap.timeline();
+
+        tl.to(wordRef.current, {
+          opacity: 1, y: 0, duration: 0.55, ease: "power3.out"
+        })
+        .to(mnemonicRef.current, {
+          opacity: 1, y: 0, duration: 0.45, ease: "power2.out"
+        }, `+=${afterEtymDelay}`)
+        .to(situationRef.current, {
+          opacity: 1, y: 0, duration: 0.45, ease: "power2.out"
+        }, "-=0.1");
+
+        return () => tl.kill();
+      }, []);
+
+      return (
+        <div className="word-display">
+          {/* ── 단어 + 메타 ── */}
+          <div ref={wordRef} className="main-word" style={{ opacity: 0 }}>
+            <h1 className="word-text">{wordData.word}</h1>
+            <div className="word-meta">
+              <span className="pronunciation">{wordData.pronunciation}</span>
+              <span className="divider-dot" />
+              <span className="korean">{wordData.korean}</span>
+            </div>
+          </div>
+
+          {/* ── 어원 분석 ── */}
+          <div className="etymology-section">
+            <p className="section-label">어원 분석 · Etymology</p>
+            <div className="etymology-row">
+              {wordData.etymology.map((etym, i) => (
+                <React.Fragment key={i}>
+                  <EtymologyNode data={etym} index={i} />
+                  {i < wordData.etymology.length - 1 && (
+                    <div className="connector">+</div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+
+          {/* ── 연상 기억법 ── */}
+          <div ref={mnemonicRef} className="mnemonic-box" style={{ opacity: 0 }}>
+            <span className="mnemonic-icon">💡</span>
+            <span>{wordData.mnemonic}</span>
+          </div>
+
+          {/* ── 예문 ── */}
+          <div ref={situationRef} className="situation-box" style={{ opacity: 0 }}>
+            <p className="section-label">예문 · Example</p>
+            <p className="situation-en">"{wordData.situation.en}"</p>
+            <p className="situation-ko">{wordData.situation.ko}</p>
+          </div>
+        </div>
+      );
+    };
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  App — 루트 컴포넌트
+    // ─────────────────────────────────────────────────────────────────────────
+    const App = () => {
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const containerRef = useRef(null);
+
+      // 슬라이드 전환 헬퍼
+      const animateTo = useCallback((nextIndex, dir) => {
+        gsap.to(containerRef.current, {
+          opacity: 0,
+          x: dir === 1 ? -52 : 52,
+          duration: 0.22,
+          ease: "power2.in",
+          onComplete: () => {
+            setCurrentIndex(nextIndex);
+            gsap.fromTo(containerRef.current,
+              { opacity: 0, x: dir === 1 ? 52 : -52 },
+              { opacity: 1, x: 0, duration: 0.38, ease: "power2.out" }
+            );
+          }
+        });
+      }, []);
+
+      const navigate = useCallback((dir) => {
+        const next = (currentIndex + dir + VOCAB_DATA.length) % VOCAB_DATA.length;
+        animateTo(next, dir);
+      }, [currentIndex, animateTo]);
+
+      const goTo = useCallback((idx) => {
+        if (idx === currentIndex) return;
+        animateTo(idx, idx > currentIndex ? 1 : -1);
+      }, [currentIndex, animateTo]);
+
+      // 키보드 네비게이션
+      useEffect(() => {
+        const onKey = (e) => {
+          if (e.key === "ArrowRight" || e.key === "ArrowDown") navigate(1);
+          if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   navigate(-1);
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+      }, [navigate]);
+
+      const wordData = VOCAB_DATA[currentIndex];
+
+      return (
+        <div className="app">
+          {/* ── 헤더 ── */}
+          <header className="app-header">
+            <div className="header-badge">경찰대 기출</div>
+            <h2 className="app-title">어원으로 배우는 영단어</h2>
+            <div className="word-counter">
+              {String(currentIndex + 1).padStart(2, "0")} / {String(VOCAB_DATA.length).padStart(2, "0")}
+            </div>
+          </header>
+
+          {/* ── 본문 ── */}
+          <main className="app-main">
+            <button className="nav-btn" onClick={() => navigate(-1)} title="이전 (←)">&#8592;</button>
+
+            <div ref={containerRef} className="card-container">
+              {/* key가 바뀌면 컴포넌트를 언마운트·재마운트 → GSAP 재실행 */}
+              <WordDisplay key={currentIndex} wordData={wordData} />
+            </div>
+
+            <button className="nav-btn" onClick={() => navigate(1)} title="다음 (→)">&#8594;</button>
+          </main>
+
+          {/* ── 진행 점 ── */}
+          <div className="progress-dots">
+            {VOCAB_DATA.map((_, i) => (
+              <button
+                key={i}
+                className={`dot ${i === currentIndex ? "active" : ""}`}
+                onClick={() => goTo(i)}
+                title={VOCAB_DATA[i].word}
+              />
+            ))}
+          </div>
+
+          <p className="keyboard-hint">
+            <kbd>←</kbd>&nbsp;<kbd>→</kbd> 키보드로도 이동할 수 있습니다
+          </p>
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
